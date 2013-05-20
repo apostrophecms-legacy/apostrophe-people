@@ -1,8 +1,8 @@
 {% extends "layout.html" %}
 
-{% include "blogMacros.html" %}
+{% include "peopleMacros.html" %}
 
-{% block bodyClass %}{{ super() }} apos-blog-page{% endblock %}
+{% block bodyClass %}{{ super() }} apos-people-page{% endblock %}
 
 {# Output the current content of the page, with buttons to edit it #}
 
@@ -16,7 +16,6 @@
         {% block subnav %}
           <div class="subnavigation">
             <h4>Subpages</h4>
-            <p>Blog posts have tags, and that means you can create a blog subpage that only shows a certain set of tags. Try it out!</p>
             <ol class="children">
             {% for relative in page.children %}
               <li><a href="{{ relative.url }}">{{ relative.title | e }}</a></li>
@@ -36,7 +35,7 @@
 
   <div class="column-2">
     <div class="apos-blog-posts">
-      {{ renderBlogPostPreviews(items, page.url) }}
+      {{ renderPeople(items, page.url) }}
     </div>
   </div>
 

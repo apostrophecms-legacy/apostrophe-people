@@ -5,17 +5,26 @@
   {% endblock %}
   <div class="apos-modal-body">
     <form>
-      {{ snippetText('title', 'Title') }}
+      {{ snippetText('first_name', 'First Name') }}
+      {{ snippetText('last_name', 'Last Name') }}
+      {{ snippetText('name', 'Name') }}
+
+      <div class="apos-login-group">
+        {{ snippetBoolean('login', 'Can Log In') }}
+        {{ snippetText('username', 'Username') }}
+        {{ snippetPassword('password', 'Password') }}
+      </div>
+
       {# Slugs become editable later, allow the edit template to add them here #}
       {% block slug %}{% endblock %}
       {{ snippetText('tags', 'Tags (comma-separated)') }}
-      {# TODO macroize this as snippetBoolean #}
-      {{ snippetSelect('published', 'Published', [ { name: '0', label: 'No' }, { name: '1', label: 'Yes' }]) }}
-      {{ snippetText('publication-date', 'Publication Date') }}
-      {{ snippetText('publication-time', 'Publication Time') }}
+      {{ snippetEmail('email', 'Email') }}
+      {{ snippetEmail('phone', 'Phone') }}
+
+      {{ snippetBoolean('published', 'Profile Published') }}
       {# The real work for these is in main.js, just get placeholders into the form #}
       {{ snippetSingleton('thumbnail', 'Thumbnail') }}
-      {{ snippetArea('body', 'Body') }}
+      {{ snippetArea('body', 'Bio') }}
     </form>
   </div>
   {% block buttons %}

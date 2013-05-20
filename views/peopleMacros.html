@@ -1,0 +1,35 @@
+{% include 'pagerMacros.html' %}
+
+{# To render full bios: renderPeople(items, slug, { full: true } ) #}
+{# To render compact links to people: renderPeople(items, slug) #}
+
+{% macro renderPeople(items, pageUrl, options = {}) %}
+  {% if items %}
+    {% for item in items %}
+      {{ renderPerson(item, pageUrl, options) }}
+    {% endfor %}
+  {% else %}
+    <h4>There are no suitable people at the moment.</h4>
+  {% endif %}
+{% endmacro %}
+
+{% macro renderPerson(item, pageUrl, options = {}) %}
+  <div class="apos-person">
+    <div class="apos-person-heading">
+      <h4><a href="{{ pageUrl }}/{{ item.slug }}">{{ item.name | e }}</a></h4>
+    </div>
+    {% if options.full %}
+      <div class="apos-person-body">{{ aposArea({ area: item.areas.body }) }}</div>
+        {% if item.tags %}
+          <div class="apos-person-tags">
+            See also:
+            {% for tag in item.tags %}
+              <a href="{{ pageUrl | build({ tag: tag }) }}">{{ tag | e }}</a>
+            {% endfor %}
+          </div>
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
+{% endmacro %}
+

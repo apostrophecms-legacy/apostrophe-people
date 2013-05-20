@@ -1,30 +1,43 @@
-function AposBlog(optionsArg) {
+function AposPeople(optionsArg) {
   var self = this;
   var options = {
-    instance: 'blogPost',
-    name: 'blog'
+    instance: 'person',
+    name: 'people'
   };
   $.extend(options, optionsArg);
   AposSnippets.call(self, options);
 
+  var simpleFields = [ 'firstName', 'lastName', 'name', 'login', 'email', 'phone' ];
+
   function findExtraFields($el, data, callback) {
-    data.publicationDate = $el.find('[name="publication-date"]').val();
-    data.publicationTime = $el.find('[name="publication-time"]').val();
+
+    _.each(simpleFields, function(field) {
+      snippet[field] = $el.findByName(apos.cssName(field)).val();
+    });
+
+    if (snippet.login) {
+      snippet.username = $el.findByName('username').val();
+      snippet.password = $el.findByName('password').val();
+    }
 
     callback();
   }
 
   self.afterPopulatingEditor = function($el, snippet, callback) {
-    $el.find('[name="publication-date"]').val(snippet.publicationDate);
-    $el.find('[name="publication-time"]').val(apos.formatTime(snippet.publicationTime));
-
-    apos.enhanceDate($el.findByName('publication-date'));
+    _.each(simpleFields, function(field) {
+      $el.findByName(apos.cssName(field)).val(snippet[field]);
+    });
 
     callback();
   };
 
   self.addingToManager = function($el, $snippet, snippet) {
-    $snippet.find('[data-date]').text(snippet.publicationDate);
+    $snippet.find('[data-first-name').val(snippet.firstName);
+    $snippet.find('[data-last-name').val(snippet.lastName);
+    $snippet.find('[data-login').val(snippet.login ? 'Yes' : 'No');
+    $snippet.find('[data-username').val(snippet.username);
+    $snippet.find('[data-published').val(snippet.published ? 'Yes' : 'No');
+
     if (snippet.tags !== null) {
       $snippet.find('[data-tags]').text(snippet.tags);
     }
@@ -39,14 +52,14 @@ function AposBlog(optionsArg) {
   };
 }
 
-AposBlog.addWidgetType = function(options) {
+AposPeople.addWidgetType = function(options) {
   if (!options) {
     options = {};
   }
   _.defaults(options, {
-    name: 'blog',
-    label: 'Blog Posts',
-    action: '/apos-blog',
+    name: 'people',
+    label: 'People',
+    action: '/apos-people',
     defaultLimit: 5
   });
   AposSnippets.addWidgetType(options);

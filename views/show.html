@@ -1,12 +1,12 @@
 {% extends "layout.html" %}
 
-{% include "blogMacros.html" %}
+{% include "peopleMacros.html" %}
 
-{% block bodyClass %}{{ super() }} apos-blog-post-page{% endblock %}
+{% block bodyClass %}{{ super() }} apos-people-page{% endblock %}
 
 {% block extraBreadcrumbs %}
   <li><a href="{{ page.url }}">{{ page.title | e }}</a></li>
-  <li>&nbsp;/&nbsp;{{ item.title | e }}</li>
+  <li>&nbsp;/&nbsp;{{ item.name | e }}</li>
 {% endblock %}
 
 {% block mainContent %}
@@ -14,8 +14,8 @@
     {{ aposArea({ slug: slug + ":sidebar", area: page.areas.sidebar, edit: edit }) }}
   </div>
 
-  <div class="column-2 blog-posts">
-    {{ renderBlogPost(item, page.url) }}
+  <div class="column-2 blog-people">
+    {{ renderPeople(item, page.url) }}
   </div>
 
 {% endblock %}

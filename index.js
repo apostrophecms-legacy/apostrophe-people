@@ -4,91 +4,62 @@ var extend = require('extend');
 var snippets = require('apostrophe-snippets');
 var util = require('util');
 var moment = require('moment');
+var passwordHash = require('password-hash');
 
-// Creating an instance of the blog module is easy:
-// var blog = require('apostrophe-blog')(options, callback);
+// Creating an instance of the people module is easy:
+// var people = require('apostrophe-people')(options, callback);
 //
 // If you want to access the constructor function for use in the
 // constructor of a module that extends this one, consider:
 //
-// var blog = require('apostrophe-blog');
+// var people = require('apostrophe-people');
 // ... Inside the constructor for the new object ...
-// blog.Blog.call(this, options, null);
+// people.People.call(this, options, null);
 //
 // In fact, this module does exactly that to extend the snippets module
 // (see below). Something similar happens on the browser side in
 // main.js.
 
-module.exports = blog;
+module.exports = people;
 
-function blog(options, callback) {
-  return new blog.Blog(options, callback);
+function people(options, callback) {
+  return new people.People(options, callback);
 }
 
-blog.Blog = function(options, callback) {
+people.People = function(options, callback) {
   var self = this;
   _.defaults(options, {
-    instance: 'blogPost',
-    name: options.name || 'blog',
-    label: options.name || 'Blog',
-    icon: options.icon || 'blog',
-    // The default would be aposBlogPostMenu, this is more natural
-    menuName: 'aposBlogMenu'
+    instance: 'person',
+    name: options.name || 'people',
+    label: options.name || 'People',
+    icon: options.icon || 'people',
+    // The default would be aposPeoplePostMenu, this is more natural
+    menuName: 'aposPeopleMenu'
   });
 
-  options.modules = (options.modules || []).concat([ { dir: __dirname, name: 'blog' } ]);
+  options.modules = (options.modules || []).concat([ { dir: __dirname, name: 'people' } ]);
 
   // Call the base class constructor. Don't pass the callback, we want to invoke it
   // ourselves after constructing more stuff
   snippets.Snippets.call(this, options, null);
 
-  // The snippet dispatcher is almost perfect for our needs, except that
-  // we expect the publication date of the blog post to appear before the slug
-  // of the blog post in the URL. So spot that situation, change req.remainder
-  // to just the slug of the blog post, and invoke the original version of
-  // "dispatch."
-
-  // Grab the "superclass" version of the dispatch method so we can call it
-  var superDispatch = self.dispatch;
-
-  self.dispatch = function(req, callback) {
-    if (req.remainder.length) {
-      var matches = req.remainder.match(/^\/\d+\/\d+\/\d+\/(.*)$/);
-      if (matches) {
-        req.remainder = '/' + matches[1];
-      }
-    }
-    superDispatch.call(this, req, callback);
-  };
-
-  self.getDefaultTitle = function() {
-    return 'My Article';
-  };
-
-  // TODO this is not very i18n friendly
   self.getAutocompleteTitle = function(snippet) {
-    return snippet.title + ' (' + moment(snippet.publishedAt).format('MM/DD') + ')';
+    var name = snippet.name;
+    // Disambiguate
+    if (snippet.login) {
+      name += ' (' + snippet.slug + ')';
+    }
+    return name;
   };
 
   // I bet you want some extra fields available along with the title to go with
   // your custom getAutocompleteTitle. Override this to retrieve more stuff.
   // We keep it to a minimum for performance.
   self.getAutocompleteFields = function() {
-    return { title: 1, _id: 1, publishedAt: 1 };
+    return { name: 1, _id: 1 };
   };
 
-  // Returns a "permalink" URL to the snippet, beginning with the
-  // slug of the specified page. See findBestPage for a good way to
-  // choose a page beneath which to link this snippet.
-  //
-  // It is commonplace to override this function. For instance,
-  // blog posts add the publication date to the URL.
-
-  self.permalink = function(snippet, page) {
-    return page.slug + '/' + moment(snippet.publishedAt).format('YYYY/MM/DD') + '/' + snippet.slug;
-  };
-
-  // Establish the default sort order for blogs
+  // Establish the default sort order for peoples
   var superGet = self.get;
 
   self.get = function(req, optionsArg, callback) {
@@ -98,31 +69,33 @@ blog.Blog = function(options, callback) {
     // object that was passed to us, which could lead to side effects
     extend(options, optionsArg || {}, true);
 
-    // If options.publishedAt is 'any', we're in the admin interface and should be
-    // able to see articles whose publication date has not yet arrived. Otherwise,
-    // show only published stuff
-    if (options.publishedAt === 'any') {
-      delete options.publishedAt;
-    } else if (!options.publishedAt) {
-      options.publishedAt = { $lte: new Date() };
-    } else {
-      // Custom criteria were passed for publishedAt
-    }
+    self._apos.convertBooleanFilterCriteria('login', options);
 
     if (!options.sort) {
-      options.sort = { publishedAt: -1 };
+      options.sort = { lastName: 1, firstName: 1 };
     }
     return superGet.call(self, req, options, callback);
   };
 
   function appendExtraFields(data, snippet, callback) {
-    snippet.publicationDate = self._apos.sanitizeDate(data.publicationDate, snippet.publicationDate);
-    snippet.publicationTime = self._apos.sanitizeTime(data.publicationTime, snippet.publicationTime);
-    if (snippet.publicationTime === null) {
-      snippet.publishedAt = new Date(snippet.publicationDate);
-    } else {
-      snippet.publishedAt = new Date(snippet.publicationDate + ' ' + snippet.publicationTime);
-    }
+    snippet.firstName = self._apos.sanitizeString(data.firstName, 'Jane');
+    snippet.lastName = self._apos.sanitizeString(data.lastName, 'Public');
+    snippet.name = self._apos.sanitizeString(data.name, 'Jane Q. Public');
+
+    snippet.login = self._apos.sanitizeBoolean(data.login);
+    snippet.username = self._apos.sanitizeString(data.username);
+    // Just in case browser side JS somehow fails miserably, default to a secure password
+    // leading _ is a mnemonic reminding me to NOT store plaintext passwords directly!
+    var _password = self._apos.sanitizeString(data.password, self._apos.generateId());
+    // password-hash npm module generates a lovely string formatted:
+    //
+    // algorithmname:salt:hash
+    //
+    // ...So before you ask, yes, a salt *is* being used here
+    snippet.password = passwordHash.generate(_password);
+
+    snippet.email = self._apos.sanitizeString(data.email);
+    snippet.phone = self._apos.sanitizeString(data.phone);
     return callback(null);
   }
 
@@ -137,17 +110,11 @@ blog.Blog = function(options, callback) {
   var superAddApiCriteria = self.addApiCriteria;
   self.addApiCriteria = function(query, criteria) {
     superAddApiCriteria.call(self, query, criteria);
-    criteria.publishedAt = 'any';
-  };
-
-  var superAddExtraAutocompleteCriteria = self.addExtraAutocompleteCriteria;
-  self.addExtraAutocompleteCriteria = function(req, criteria) {
-    superAddExtraAutocompleteCriteria.call(self, req, criteria);
-    criteria.publishedAt = 'any';
+    criteria.login = 'any';
   };
 
   if (callback) {
-    // Invoke callback on next tick so that the blog object
+    // Invoke callback on next tick so that the people object
     // is returned first and can be assigned to a variable for
     // use in whatever our callback is invoking
     process.nextTick(function() { return callback(null); });
