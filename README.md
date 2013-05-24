@@ -4,4 +4,4 @@
 
 A "person" is anyone who can either log in, be seen in a personnel directory, or both. "Users" are simply people who have the "login" box checked and a username and password configured. This follows the MongoDB philosophy of avoiding gratuitous joins between users, profiles, etc.
 
-People can be centrally managed via the "People" dropdown. In addition, one can create a "people page" to display a directory of people. People can be added and managed from such pages, in which case they will always appear there. This provides a simple and intuitive way to manage the "staff" on one page, the "contributors" on another, and so on. However, one can also configure a "people" page to display people based on tags and to include people from different home pages.
+People can be centrally managed via the "People" dropdown. In addition, one can create a "people page" to display a directory of people. For now people are displayed on such pages based on shared tags, however we plan to also give each user an affinity for a specific "home" page allowing for easier management of users.

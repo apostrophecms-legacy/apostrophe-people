@@ -7,18 +7,15 @@ function AposPeople(optionsArg) {
   $.extend(options, optionsArg);
   AposSnippets.call(self, options);
 
-  var simpleFields = [ 'firstName', 'lastName', 'name', 'login', 'email', 'phone' ];
+  var simpleFields = [ 'firstName', 'lastName', 'login', 'username', 'email', 'phone' ];
 
   function findExtraFields($el, data, callback) {
-
+    apos.log('findExtraFields');
     _.each(simpleFields, function(field) {
-      snippet[field] = $el.findByName(apos.cssName(field)).val();
+      data[field] = $el.findByName(apos.cssName(field)).val();
     });
 
-    if (snippet.login) {
-      snippet.username = $el.findByName('username').val();
-      snippet.password = $el.findByName('password').val();
-    }
+    data.password = $el.findByName('password').val();
 
     callback();
   }
@@ -27,16 +24,66 @@ function AposPeople(optionsArg) {
     _.each(simpleFields, function(field) {
       $el.findByName(apos.cssName(field)).val(snippet[field]);
     });
+    var usernameFocused = false;
+    var $firstName = $el.findByName('first-name');
+    var $lastName = $el.findByName('last-name');
+
+    $firstName.change(updateName);
+    $lastName.change(updateName);
+    $firstName.change(updateUsername);
+    $lastName.change(updateUsername);
+
+    // Do not prepopulate password
+
+    // Suggest full name if none yet or it doesn't have both first and last yet
+    function updateName() {
+      var $name = $el.findByName('title');
+      if ($name.val().indexOf(' ') === -1) {
+        $name.val(($firstName.val() + ' ' + $lastName.val()).replace(/ +$/, ''));
+      }
+      return true;
+    }
+
+    // Keep updating the username suggestion until they focus that field.
+    // Of course we don't mess with existing usernames.
+    function updateUsername() {
+      var $username = $el.findByName('username');
+      if ((!usernameFocused) && (snippet.username === undefined)) {
+        var username = apos.slugify($firstName.val() + $lastName.val());
+        $.post(self._action + '/username-unique', { username: username }, function(data) {
+          $username.val(data.username);
+        });
+      }
+      $username.on('focus', function() {
+        usernameFocused = true;
+      });
+    }
+
+    // Generate a recommended, strong password for any new user
+    function recommendPassword() {
+      var $suggestedPassword = $el.find('[data-suggested-password]');
+      var $password = $el.findByName('password');
+
+      $.post(self._action + '/generate-password', {}, function(data) {
+        $suggestedPassword.find('[data-suggestion]').text(data.password);
+        $suggestedPassword.show();
+        $password.val(data.password);
+      });
+    }
+
+    if (snippet.username === undefined) {
+      recommendPassword();
+    }
 
     callback();
   };
 
   self.addingToManager = function($el, $snippet, snippet) {
-    $snippet.find('[data-first-name').val(snippet.firstName);
-    $snippet.find('[data-last-name').val(snippet.lastName);
-    $snippet.find('[data-login').val(snippet.login ? 'Yes' : 'No');
-    $snippet.find('[data-username').val(snippet.username);
-    $snippet.find('[data-published').val(snippet.published ? 'Yes' : 'No');
+    $snippet.find('[data-first-name]').val(snippet.firstName);
+    $snippet.find('[data-last-name]').val(snippet.lastName);
+    $snippet.find('[data-login]').val(snippet.login ? 'Yes' : 'No');
+    $snippet.find('[data-username]').val(snippet.username);
+    $snippet.find('[data-published]').val(snippet.published ? 'Yes' : 'No');
 
     if (snippet.tags !== null) {
       $snippet.find('[data-tags]').text(snippet.tags);

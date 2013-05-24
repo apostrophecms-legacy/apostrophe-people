@@ -13,11 +13,15 @@
       </tr>
       <tr class="apos-template" data-item>
         <td>
-          <span><a href="#" data-edit-person data-name>Jane Q. Public</a></span>
+          {# Full names are stored in the "title" field for consistency among all #}
+          {# snippet subclasses. We call it a name in public, of course. #}
+          <span><a href="#" data-edit-person data-title>Jane Q. Public</a></span>
         </td>
         <td><span data-tags></span></td>
       </tr>
     </table>
+    {# Container for pager, which gets rendered here by js #}
+    <div data-pager-box></div>
   </div>
 
   <div class="apos-modal-footer">

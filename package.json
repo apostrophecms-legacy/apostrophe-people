@@ -1,6 +1,6 @@
 {
   "name": "apostrophe-people",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Staff directories, user accounts and personal profiles for the Apostrophe content management system",
   "main": "index.js",
   "scripts": {
@@ -22,11 +22,12 @@
   "author": "P'unk Avenue LLC",
   "license": "MIT",
   "dependencies": {
-    "async": "~0.2.x",
+    "async": "~0.2.8",
     "underscore": "~1.4.x",
     "extend": "~1.1.x",
-    "apostrophe-snippets": "0.0.x",
     "moment": "~2.0.x",
-    "password-hash": "~1.2.1"
+    "password-hash": "~1.2.1",
+    "apostrophe-snippets": "~0.0.x",
+    "xkcd-pwgen": "0.0.1"
   }
 }

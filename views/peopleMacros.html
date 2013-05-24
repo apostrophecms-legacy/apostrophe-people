@@ -15,8 +15,11 @@
 
 {% macro renderPerson(item, pageUrl, options = {}) %}
   <div class="apos-person">
+    <div class="apos-thumbnail">
+      {{ aposSingleton({ slug: item.slug + ':thumbnail', type: 'slideshow', area: item.areas.thumbnail, edit: false, size: 'one-sixth' }) }}
+    </div>
     <div class="apos-person-heading">
-      <h4><a href="{{ pageUrl }}/{{ item.slug }}">{{ item.name | e }}</a></h4>
+      <h4><a href="{{ pageUrl }}/{{ item.slug }}">{{ item.title | e }}</a></h4>
     </div>
     {% if options.full %}
       <div class="apos-person-body">{{ aposArea({ area: item.areas.body }) }}</div>

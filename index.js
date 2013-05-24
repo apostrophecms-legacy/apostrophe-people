@@ -5,6 +5,7 @@ var snippets = require('apostrophe-snippets');
 var util = require('util');
 var moment = require('moment');
 var passwordHash = require('password-hash');
+var pwgen = require('xkcd-pwgen');
 
 // Creating an instance of the people module is easy:
 // var people = require('apostrophe-people')(options, callback);
@@ -39,6 +40,70 @@ people.People = function(options, callback) {
 
   options.modules = (options.modules || []).concat([ { dir: __dirname, name: 'people' } ]);
 
+  // TODO this is kinda ridiculous. We need to have a way to call a function that
+  // adds some routes before the static route is added. Maybe the static route should
+  // be moved so it can't conflict with anything.
+  if (!options.addRoutes) {
+    options.addRoutes = addRoutes;
+  } else {
+    var superAddRoutes = options.addRoutes;
+    options.addRoutes = function() {
+      addRoutes();
+      superAddRoutes();
+    };
+  }
+
+  function addRoutes() {
+    self._app.post(self._action + '/username-unique', function(req, res) {
+      self._apos.permissions(req, 'edit-people', null, function(err) {
+        if (err) {
+          res.statusCode = 404;
+          return res.send('notfound');
+        }
+        return generate();
+      });
+
+      function generate() {
+        var username = req.body.username;
+        var done = false;
+        async.until(function() { return done; }, attempt, after);
+        function attempt(callback) {
+          var users = self.get(req, { username: username }, function(err, results) {
+            if (err) {
+              return callback(err);
+            }
+            if (results.snippets.length) {
+              username += Math.floor(Math.random() * 10);
+              return callback(null);
+            }
+            done = true;
+            return callback(null);
+          });
+        }
+        function after(err) {
+          if (err) {
+            res.statusCode = 500;
+            return res.send('error');
+          }
+          return res.send({ username: username });
+        }
+      }
+    });
+
+    self._app.post(self._action + '/generate-password', function(req, res) {
+      self._apos.permissions(req, 'edit-profile', null, function(err) {
+        if (err) {
+          res.statusCode = 404;
+          return res.send('notfound');
+        }
+        return generate();
+      });
+      function generate() {
+        return res.send({ password: pwgen.generatePassword() });
+      }
+    });
+  }
+
   // Call the base class constructor. Don't pass the callback, we want to invoke it
   // ourselves after constructing more stuff
   snippets.Snippets.call(this, options, null);
@@ -59,8 +124,19 @@ people.People = function(options, callback) {
     return { name: 1, _id: 1 };
   };
 
-  // Establish the default sort order for peoples
+  // Attach the groups module to this module, has to be done after initialization
+  // because we initialize the users module first. We need access to the groups module
+  // in order to perform joins properly. This is not how groups are
+  // attached to individual people, note the groupIds property on persons.
+
+  self.setGroups = function(groupsArg) {
+    self._groups = groupsArg;
+  };
+
   var superGet = self.get;
+
+  // Adjust sort order, accept the 'login' boolean criteria,
+  // join with groups, delete the password field before returning
 
   self.get = function(req, optionsArg, callback) {
     var options = {};
@@ -71,28 +147,50 @@ people.People = function(options, callback) {
 
     self._apos.convertBooleanFilterCriteria('login', options);
 
+    var getGroups = true;
+    if (options.getGroups === false) {
+      getGroups = false;
+    }
+    delete options.getGroups;
+
     if (!options.sort) {
       options.sort = { lastName: 1, firstName: 1 };
     }
-    return superGet.call(self, req, options, callback);
+    return superGet.call(self, req, options, function(err, results) {
+      if (err) {
+        return callback(err);
+      }
+      if (self._groups) {
+        // Avoid infinite recursion by passing getPeople: false
+        // TODO Does this pass on the results properly?
+        return self._apos.joinOneToMany(req, results.snippets, 'groupIds', '_groups', { get: self._groups.get, getOptions: { getPeople: false } }, callback);
+      } else {
+        return callback(null, results);
+      }
+    });
   };
 
   function appendExtraFields(data, snippet, callback) {
     snippet.firstName = self._apos.sanitizeString(data.firstName, 'Jane');
     snippet.lastName = self._apos.sanitizeString(data.lastName, 'Public');
-    snippet.name = self._apos.sanitizeString(data.name, 'Jane Q. Public');
 
     snippet.login = self._apos.sanitizeBoolean(data.login);
     snippet.username = self._apos.sanitizeString(data.username);
-    // Just in case browser side JS somehow fails miserably, default to a secure password
-    // leading _ is a mnemonic reminding me to NOT store plaintext passwords directly!
-    var _password = self._apos.sanitizeString(data.password, self._apos.generateId());
-    // password-hash npm module generates a lovely string formatted:
-    //
-    // algorithmname:salt:hash
-    //
-    // ...So before you ask, yes, a salt *is* being used here
-    snippet.password = passwordHash.generate(_password);
+
+    // Leading _ is a mnemonic reminding me to NOT store plaintext passwords directly!
+    var _password = self._apos.sanitizeString(data.password, null);
+
+    if ((!snippet.password) || (_password !== null)) {
+      if (_password === null) {
+        _password = self._apos.generateId();
+      }
+      // password-hash npm module generates a lovely string formatted:
+      //
+      // algorithmname:salt:hash
+      //
+      // With a newly generated salt. So before you ask, yes, a salt is being used here
+      snippet.password = passwordHash.generate(_password);
+    }
 
     snippet.email = self._apos.sanitizeString(data.email);
     snippet.phone = self._apos.sanitizeString(data.phone);
