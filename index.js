@@ -109,19 +109,21 @@ people.People = function(options, callback) {
   snippets.Snippets.call(this, options, null);
 
   self.getAutocompleteTitle = function(snippet) {
-    var name = snippet.name;
+    var title = snippet.title;
     // Disambiguate
     if (snippet.login) {
-      name += ' (' + snippet.slug + ')';
+      title += ' (' + snippet.username + ')';
+    } else {
+      title += ' (' + snippet.slug + ')';
     }
-    return name;
+    return title;
   };
 
   // I bet you want some extra fields available along with the title to go with
   // your custom getAutocompleteTitle. Override this to retrieve more stuff.
   // We keep it to a minimum for performance.
   self.getAutocompleteFields = function() {
-    return { name: 1, _id: 1 };
+    return { title: 1, firstName: 1, lastName: 1, _id: 1, login: 1, username: 1 };
   };
 
   // Attach the groups module to this module, has to be done after initialization
@@ -162,8 +164,12 @@ people.People = function(options, callback) {
       }
       if (self._groups) {
         // Avoid infinite recursion by passing getPeople: false
-        // TODO Does this pass on the results properly?
-        return self._apos.joinOneToMany(req, results.snippets, 'groupIds', '_groups', { get: self._groups.get, getOptions: { getPeople: false } }, callback);
+        return self._apos.joinOneToMany(req, results.snippets, 'groupIds', '_groups', { get: self._groups.get, getOptions: { getPeople: false } }, function(err) {
+          if (err) {
+            return callback(err);
+          }
+          return callback(null, results);
+        });
       } else {
         return callback(null, results);
       }

@@ -10,7 +10,6 @@ function AposPeople(optionsArg) {
   var simpleFields = [ 'firstName', 'lastName', 'login', 'username', 'email', 'phone' ];
 
   function findExtraFields($el, data, callback) {
-    apos.log('findExtraFields');
     _.each(simpleFields, function(field) {
       data[field] = $el.findByName(apos.cssName(field)).val();
     });
@@ -90,11 +89,7 @@ function AposPeople(optionsArg) {
     }
   };
 
-  self.beforeInsert = function($el, data, callback) {
-    findExtraFields($el, data, callback);
-  };
-
-  self.beforeUpdate = function($el, data, callback) {
+  self.beforeSave = function($el, data, callback) {
     findExtraFields($el, data, callback);
   };
 }
