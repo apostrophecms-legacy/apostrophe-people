@@ -38,6 +38,10 @@ people.People = function(options, callback) {
     menuName: 'aposPeopleMenu'
   });
 
+  // The groups module provides an enhanced Directory widget that
+  // also covers displaying people
+  _.defaults(options, { widget: false });
+
   options.modules = (options.modules || []).concat([ { dir: __dirname, name: 'people' } ]);
 
   // TODO this is kinda ridiculous. We need to have a way to call a function that
@@ -68,7 +72,7 @@ people.People = function(options, callback) {
         var done = false;
         async.until(function() { return done; }, attempt, after);
         function attempt(callback) {
-          var users = self.get(req, { username: username }, function(err, results) {
+          var users = self.get(req, { username: username }, {}, function(err, results) {
             if (err) {
               return callback(err);
             }
@@ -123,7 +127,7 @@ people.People = function(options, callback) {
   // your custom getAutocompleteTitle. Override this to retrieve more stuff.
   // We keep it to a minimum for performance.
   self.getAutocompleteFields = function() {
-    return { title: 1, firstName: 1, lastName: 1, _id: 1, login: 1, username: 1 };
+    return { title: 1, firstName: 1, lastName: 1, _id: 1, login: 1, username: 1, slug: 1 };
   };
 
   // Attach the groups module to this module, has to be done after initialization
@@ -140,25 +144,33 @@ people.People = function(options, callback) {
   // Adjust sort order, accept the 'login' boolean criteria,
   // join with groups, delete the password field before returning
 
-  self.get = function(req, optionsArg, callback) {
+  self.get = function(req, userCriteria, optionsArg, callback) {
     var options = {};
+    var filterCriteria = {};
 
     // "Why copy the object like this?" If we don't, we're modifying the
     // object that was passed to us, which could lead to side effects
     extend(options, optionsArg || {}, true);
 
-    self._apos.convertBooleanFilterCriteria('login', options);
+    self._apos.convertBooleanFilterCriteria('login', options, filterCriteria);
 
     var getGroups = true;
     if (options.getGroups === false) {
       getGroups = false;
     }
-    delete options.getGroups;
 
     if (!options.sort) {
       options.sort = { lastName: 1, firstName: 1 };
     }
-    return superGet.call(self, req, options, function(err, results) {
+
+    var criteria = {
+      $and: [
+        userCriteria,
+        filterCriteria
+      ]
+    };
+
+    return superGet.call(self, req, criteria, options, function(err, results) {
       if (err) {
         return callback(err);
       }
@@ -212,10 +224,76 @@ people.People = function(options, callback) {
   };
 
   var superAddApiCriteria = self.addApiCriteria;
-  self.addApiCriteria = function(query, criteria) {
-    superAddApiCriteria.call(self, query, criteria);
-    criteria.login = 'any';
+  self.addApiCriteria = function(query, criteria, options) {
+    superAddApiCriteria.call(self, query, criteria, options);
+    options.login = 'any';
   };
+
+  // The best engine page for a person is the best engine page
+  // for their first group: the directory page that suits their
+  // first group
+
+  self.findBestPage = function(req, snippet, callback) {
+    if (!req.aposBestPageByGroupId) {
+      req.aposBestPageByGroupId = {};
+    }
+    var groupId = snippet.groupIds ? snippet.groupIds[0] : undefined;
+    if (groupId === undefined) {
+      // The best engine page for a user with no groups is the
+      // best engine page for a group with no tags
+      return self._groups.findBestPage(req, { tags: [] }, callback);
+    }
+    var group;
+    var page;
+    // Cache for performance
+    if (req.aposBestPageByGroupId[groupId]) {
+      return callback(null, req.aposBestPageByGroupId[groupId]);
+    }
+    async.series([ getGroup, findBest ], function(err) {
+      if (err) {
+        return callback(err);
+      }
+      req.aposBestPageByGroupId[group._id] = page;
+      return callback(null, page);
+    });
+    function getFirstGroup(callback) {
+      if (snippet._groups) {
+        group = snippet._groups[0];
+        return callback(null);
+      }
+      return self._groups.find({ _id: groupId }, function(err, results) {
+        if (err) {
+          return callback(err);
+        }
+        group = results.snippets.groups[0];
+        return callback(null);
+      });
+    }
+    function findBest(callback) {
+      // The best engine page for a user with no groups is the
+      // best engine page for a group with no tags
+      if (!group) {
+        group = { tags: [] };
+      }
+      return self._groups.findBestPage(group, function(err, pageArg) {
+        page = pageArg;
+        return callback(err);
+      });
+    }
+  };
+
+  // Use a permissions event handler to put the kibosh on
+  // any editing of people by non-admins for now. Later we'll have
+  // ways to do that safely without access to the login checkbox
+  // in certain situations
+
+  self._apos.on('permissions', function(req, action, result) {
+    if (action.match(/\-people$/) && (action !== 'view-people')) {
+      if (!(req.user && req.user.permissions.admin)) {
+        result.response = 'Forbidden';
+      }
+    }
+  });
 
   if (callback) {
     // Invoke callback on next tick so that the people object
