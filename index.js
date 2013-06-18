@@ -174,6 +174,11 @@ people.People = function(options, callback) {
       if (err) {
         return callback(err);
       }
+      _.each(results.snippets, function(snippet) {
+        // Read access to the password is strictly via Appy's local strategy, anything else
+        // must consider it write-only
+        delete snippet.password;
+      });
       if (self._groups) {
         // Avoid infinite recursion by passing getPeople: false
         return self._apos.joinOneToMany(req, results.snippets, 'groupIds', '_groups', { get: self._groups.get, getOptions: { getPeople: false } }, function(err) {
