@@ -179,9 +179,10 @@ people.People = function(options, callback) {
         // must consider it write-only
         delete snippet.password;
       });
-      if (self._groups) {
+      if (getGroups) {
         // Avoid infinite recursion by passing getPeople: false
-        return self._apos.joinOneToMany(req, results.snippets, 'groupIds', '_groups', { get: self._groups.get, getOptions: { getPeople: false } }, function(err) {
+        // Permalink to the same directory page, if any
+        return self._apos.joinOneToMany(req, results.snippets, 'groupIds', '_groups', { get: self._groups.get, getOptions: { getPeople: false, permalink: optionsArg.permalink } }, function(err) {
           if (err) {
             return callback(err);
           }
@@ -191,6 +192,14 @@ people.People = function(options, callback) {
         return callback(null, results);
       }
     });
+  };
+
+  // The page needs to be a directory page, served by the groups
+  // module
+
+  self.permalink = function(req, snippet, page, callback) {
+    snippet.url = page.slug + '/people/' + snippet.slug;
+    return callback(null);
   };
 
   function appendExtraFields(data, snippet, callback) {
@@ -236,7 +245,9 @@ people.People = function(options, callback) {
 
   // The best engine page for a person is the best engine page
   // for their first group: the directory page that suits their
-  // first group
+  // first group. TODO: think about the fact that groups don't
+  // maintain a guaranteed pecking order right now. Possibly we
+  // should guarantee that a user's groups can be ordered
 
   self.findBestPage = function(req, snippet, callback) {
     if (!req.aposBestPageByGroupId) {
@@ -244,9 +255,10 @@ people.People = function(options, callback) {
     }
     var groupId = snippet.groupIds ? snippet.groupIds[0] : undefined;
     if (groupId === undefined) {
-      // The best engine page for a user with no groups is the
-      // best engine page for a group with no tags
-      return self._groups.findBestPage(req, { tags: [] }, callback);
+      // The best engine page for a user with no groups is a general
+      // purpose one, best matched by asking for a page for a group
+      // with an id no real page will be locked down to.
+      return self._groups.findBestPage(req, { _id: 'dummy', type: 'group' }, callback);
     }
     var group;
     var page;
@@ -254,7 +266,7 @@ people.People = function(options, callback) {
     if (req.aposBestPageByGroupId[groupId]) {
       return callback(null, req.aposBestPageByGroupId[groupId]);
     }
-    async.series([ getGroup, findBest ], function(err) {
+    async.series([ getFirstGroup, findBest ], function(err) {
       if (err) {
         return callback(err);
       }
@@ -266,21 +278,21 @@ people.People = function(options, callback) {
         group = snippet._groups[0];
         return callback(null);
       }
-      return self._groups.find({ _id: groupId }, function(err, results) {
+      return self._groups.getOne(req, { _id: { $in: snippet._groupIds || [] } }, {}, function(err, groupArg) {
         if (err) {
           return callback(err);
         }
-        group = results.snippets.groups[0];
+        group = groupArg;
         return callback(null);
       });
     }
     function findBest(callback) {
       // The best engine page for a user with no groups is the
-      // best engine page for a group with no tags
+      // best engine page for a nonexistent group
       if (!group) {
-        group = { tags: [] };
+        group = { _id: 'dummy', type: 'group' };
       }
-      return self._groups.findBestPage(group, function(err, pageArg) {
+      return self._groups.findBestPage(req, group, function(err, pageArg) {
         page = pageArg;
         return callback(err);
       });
@@ -299,6 +311,12 @@ people.People = function(options, callback) {
       }
     }
   });
+
+  var superDispatch = self.dispatch;
+  self.dispatch = function(req, callback) {
+    console.log('DEPRECATED: the people module should no longer be used to create staff directory pages. Instead use the groups module which is designed to serve up directories using data from both people and groups.');
+    return superDispatch.call(this, req, callback);
+  };
 
   if (callback) {
     // Invoke callback on next tick so that the people object
