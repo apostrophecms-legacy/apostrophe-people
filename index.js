@@ -181,8 +181,8 @@ people.People = function(options, callback) {
       });
       if (getGroups) {
         // Avoid infinite recursion by passing getPeople: false
-        // Permalink to the same directory page, if any
-        return self._apos.joinOneToMany(req, results.snippets, 'groupIds', '_groups', { get: self._groups.get, getOptions: { getPeople: false, permalink: optionsArg.permalink } }, function(err) {
+        // Let the groups permalink to their own best directory pages
+        return self._apos.joinOneToMany(req, results.snippets, 'groupIds', '_groups', { get: self._groups.get, getOptions: { getPeople: false, permalink: true } }, function(err) {
           if (err) {
             return callback(err);
           }
@@ -198,7 +198,7 @@ people.People = function(options, callback) {
   // module
 
   self.permalink = function(req, snippet, page, callback) {
-    snippet.url = page.slug + '/people/' + snippet.slug;
+    snippet.url = page.slug + '/' + snippet.slug;
     return callback(null);
   };
 
