@@ -23,6 +23,9 @@ function AposPeople(optionsArg) {
     _.each(simpleFields, function(field) {
       $el.findByName(apos.cssName(field)).val(snippet[field]);
     });
+    // Boolean fields must get an explicit '1' or '0' for
+    // the select element
+    $el.find('[name="login"]').val(snippet.login ? '1' : '0');
     var usernameFocused = false;
     var $firstName = $el.findByName('first-name');
     var $lastName = $el.findByName('last-name');
