@@ -154,6 +154,10 @@ people.People = function(options, callback) {
 
     self._apos.convertBooleanFilterCriteria('login', options, filterCriteria);
 
+    if (options.letter) {
+      filterCriteria.lastName = RegExp("^" + RegExp.quote(options.letter), 'i');
+    }
+
     var getGroups = true;
     if (options.getGroups === false) {
       getGroups = false;
