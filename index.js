@@ -207,6 +207,10 @@ people.People = function(options, callback) {
   };
 
   function appendExtraFields(data, snippet, callback) {
+    return callback(null);
+  }
+
+  self.beforeSave = function(req, data, snippet, callback) {
     snippet.firstName = self._apos.sanitizeString(data.firstName, 'Jane');
     snippet.lastName = self._apos.sanitizeString(data.lastName, 'Public');
 
@@ -231,14 +235,6 @@ people.People = function(options, callback) {
     snippet.email = self._apos.sanitizeString(data.email);
     snippet.phone = self._apos.sanitizeString(data.phone);
     return callback(null);
-  }
-
-  self.beforeInsert = function(req, data, snippet, callback) {
-    appendExtraFields(data, snippet, callback);
-  };
-
-  self.beforeUpdate = function(req, data, snippet, callback) {
-    appendExtraFields(data, snippet, callback);
   };
 
   var superAddApiCriteria = self.addApiCriteria;
