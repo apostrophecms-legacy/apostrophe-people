@@ -174,6 +174,18 @@ people.People = function(options, callback) {
       ]
     };
 
+    if ((options.groupIds && options.groupIds.length) || (options.notGroupIds && options.notGroupIds.length)) {
+      var $and = [];
+      if (options.groupIds && options.groupIds.length) {
+        $and.push({ groupIds: { $in: options.groupIds } });
+      }
+      if (options.notGroupIds && options.notGroupIds.length) {
+        $and.push({ groupIds: { $nin: options.notGroupIds } });
+      }
+      $and.push(criteria);
+      criteria = { $and: $and };
+    }
+
     return superGet.call(self, req, criteria, options, function(err, results) {
       if (err) {
         return callback(err);
