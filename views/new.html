@@ -24,7 +24,16 @@
 
       {# Slugs become editable later, allow the edit template to add them here #}
       {% block slug %}{% endblock %}
-      {{ snippetTags('tags', 'Tags (comma-separated)') }}
+
+      <div class="apos-person-read-only-groups">
+        <h4>Groups</h4>
+        <p>Edit this user's group memberships by editing the groups in question.</p>
+        <ul data-groups class="apos-person-groups">
+          <li data-group class="apos-template apos-person-group"><span class="apos-person-group-name" data-name>Group Name</span><span class="apos-person-job-title" data-job-title>Job Title</span></li>
+        </ul>
+      </div>
+
+      {{ snippetTags('tags', 'Tags') }}
       {{ snippetEmail('email', 'Email') }}
       {{ snippetEmail('phone', 'Phone') }}
 

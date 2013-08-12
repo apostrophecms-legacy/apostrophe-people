@@ -79,6 +79,22 @@ function AposPeople(optionsArg) {
       recommendPassword();
     }
 
+    // Read-only display of group memberships and titles. TODO:
+    // allow this to be edited from the person's side.
+    _.each(snippet._groups || [], function(group) {
+      var $group = apos.fromTemplate($el.find('[data-groups] [data-group]'));
+      $group.find('[data-name]').text(group.title);
+      var $jobTitle = $group.find('[data-job-title]');
+      var extra = snippet.groupExtras[group._id];
+      if (extra && extra.jobTitle) {
+        $group.find('[data-job-title]').text(extra.jobTitle);
+      } else {
+        $group.find('[data-job-title]').remove();
+      }
+      apos.log($group[0]);
+      $el.find('[data-groups]').append($group);
+    });
+
     callback();
   };
 
