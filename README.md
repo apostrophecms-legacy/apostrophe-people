@@ -58,3 +58,15 @@ Only people who are members of groups for which the "Admin" box is checked, and 
 * Adding groups
 * Changing and edit and view permissions.
 
+### Sorting People Manually Within A Group
+
+Many organizations have their own way of ranking people within groups or departments that must be maintained. By default, the members of a group are displayed alphabetically. However, you can switch to manual ordering by passing a simple option when initializing the groups module. Here's an example from `app.js`:
+
+    function initAposGroups(callback) {
+      groups = require('apostrophe-groups')({
+        ... other options ...
+        peopleSortable: true
+      }, ... etc ...);
+    }
+
+Once you enable this option, you will be able to drag and drop people to reorder them in the list of persons that are members of each group.
