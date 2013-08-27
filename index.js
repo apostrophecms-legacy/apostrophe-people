@@ -330,6 +330,14 @@ people.People = function(options, callback) {
     return superDispatch.call(this, req, callback);
   };
 
+  var superImportCreateItem = self.importCreateItem;
+  self.importCreateItem = function(req, data, callback) {
+    if (!data.title) {
+      data.title = data.firstName + ' ' + data.lastName;
+    }
+    return superImportCreateItem(req, data, callback);
+  };
+
   if (callback) {
     // Invoke callback on next tick so that the people object
     // is returned first and can be assigned to a variable for
