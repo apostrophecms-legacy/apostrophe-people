@@ -57,6 +57,40 @@ people.People = function(options, callback) {
     };
   }
 
+  /**
+   * Make a username unique. Invokes callback with null and a unique
+   * version of the username, or with an error if any. Does not
+   * address race conditions.
+   * @param  {String}   username
+   * @param  {Function} callback
+   */
+  self.usernameUnique = function(username, callback) {
+    var done = false;
+    async.until(function() { return done; }, attempt, function(err) {
+      if (err) {
+        return callback(err);
+      }
+      return callback(null, username);
+    });
+
+    function attempt(callback) {
+      // Go straight to mongo as we need uniqueness and don't care
+      // about view permissions or trash status
+      var criteria = { type: self._instance, username: username };
+      var users = self._apos.pages.findOne(criteria, function(err, existing) {
+        if (err) {
+          return callback(err);
+        }
+        if (existing) {
+          username += Math.floor(Math.random() * 10);
+          return callback(null);
+        }
+        done = true;
+        return callback(null);
+      });
+    }
+  };
+
   function addRoutes() {
     self._app.post(self._action + '/username-unique', function(req, res) {
       self._apos.permissions(req, 'edit-people', null, function(err) {
@@ -69,28 +103,14 @@ people.People = function(options, callback) {
 
       function generate() {
         var username = req.body.username;
-        var done = false;
-        async.until(function() { return done; }, attempt, after);
-        function attempt(callback) {
-          var users = self.get(req, { username: username }, {}, function(err, results) {
-            if (err) {
-              return callback(err);
-            }
-            if (results.snippets.length) {
-              username += Math.floor(Math.random() * 10);
-              return callback(null);
-            }
-            done = true;
-            return callback(null);
-          });
-        }
-        function after(err) {
+        return self.usernameUnique(username, function(err, usernameArg) {
+          username = usernameArg;
           if (err) {
             res.statusCode = 500;
             return res.send('error');
           }
           return res.send({ username: username });
-        }
+        });
       }
     });
 
@@ -223,6 +243,8 @@ people.People = function(options, callback) {
   }
 
   self.beforeSave = function(req, data, snippet, callback) {
+    var oldUsername = snippet.username;
+
     snippet.firstName = self._apos.sanitizeString(data.firstName, 'Jane');
     snippet.lastName = self._apos.sanitizeString(data.lastName, 'Public');
 
@@ -246,7 +268,18 @@ people.People = function(options, callback) {
 
     snippet.email = self._apos.sanitizeString(data.email);
     snippet.phone = self._apos.sanitizeString(data.phone);
-    return callback(null);
+
+    if (snippet.username !== oldUsername) {
+      return self.usernameUnique(snippet.username, function(err, username) {
+        if (err) {
+          return callback(err);
+        }
+        snippet.username = username;
+        return callback(null);
+      });
+    } else {
+      return callback(null);
+    }
   };
 
   var superAddApiCriteria = self.addApiCriteria;
