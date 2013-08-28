@@ -77,6 +77,9 @@ function AposPeople(optionsArg) {
 
     if (snippet.username === undefined) {
       recommendPassword();
+    } else {
+      // Hide this when editing existing users
+      $el.find('[data-suggested-password]').hide();
     }
 
     // Read-only display of group memberships and titles. TODO:
