@@ -34,6 +34,7 @@ people.People = function(options, callback) {
     name: options.name || 'people',
     label: options.name || 'People',
     icon: options.icon || 'people',
+    groupsType: 'groups',
     // The default would be aposPeoplePostMenu, this is more natural
     menuName: 'aposPeopleMenu'
   });
@@ -41,6 +42,8 @@ people.People = function(options, callback) {
   // The groups module provides an enhanced Directory widget that
   // also covers displaying people
   _.defaults(options, { widget: false });
+
+  self._groupsType = options.groupsType;
 
   options.modules = (options.modules || []).concat([ { dir: __dirname, name: 'people' } ]);
 
@@ -56,6 +59,11 @@ people.People = function(options, callback) {
       superAddRoutes();
     };
   }
+
+  /**
+   * Deprecated - bc - unnecessary
+   */
+   self.setGroups = function(groups) {};
 
   /**
    * Make a username unique. Invokes callback with null and a unique
@@ -150,13 +158,12 @@ people.People = function(options, callback) {
     return { title: 1, firstName: 1, lastName: 1, _id: 1, login: 1, username: 1, slug: 1 };
   };
 
-  // Attach the groups module to this module, has to be done after initialization
-  // because we initialize the users module first. We need access to the groups module
-  // in order to perform joins properly. This is not how groups are
-  // attached to individual people, note the groupIds property on persons.
+  self.getGroupsManager = function() {
+    return self._pages.getType(self._groupsType);
+  };
 
-  self.setGroups = function(groupsArg) {
-    self._groups = groupsArg;
+  self.getGroupsInstance = function() {
+    return self.getGroupsManager()._instance;
   };
 
   var superGet = self.get;
@@ -218,7 +225,7 @@ people.People = function(options, callback) {
       if (getGroups) {
         // Avoid infinite recursion by passing getPeople: false
         // Let the groups permalink to their own best directory pages
-        return self._apos.joinByArray(req, results.snippets, 'groupIds', '_groups', { get: self._groups.get, getOptions: { getPeople: false, permalink: true } }, function(err) {
+        return self._apos.joinByArray(req, results.snippets, 'groupIds', '_groups', { get: self.getGroupsManager().get, getOptions: { getPeople: false, permalink: true } }, function(err) {
           if (err) {
             return callback(err);
           }
@@ -303,7 +310,7 @@ people.People = function(options, callback) {
       // The best engine page for a user with no groups is a general
       // purpose one, best matched by asking for a page for a group
       // with an id no real page will be locked down to.
-      return self._groups.findBestPage(req, { _id: 'dummy', type: 'group' }, callback);
+      return self.getGroupsManager().findBestPage(req, { _id: 'dummy', type: 'group' }, callback);
     }
     var group;
     var page;
@@ -323,7 +330,7 @@ people.People = function(options, callback) {
         group = snippet._groups[0];
         return callback(null);
       }
-      return self._groups.getOne(req, { _id: { $in: snippet._groupIds || [] } }, {}, function(err, groupArg) {
+      return self.getGroupsManager().getOne(req, { _id: { $in: snippet._groupIds || [] } }, {}, function(err, groupArg) {
         if (err) {
           return callback(err);
         }
@@ -337,7 +344,7 @@ people.People = function(options, callback) {
       if (!group) {
         group = { _id: 'dummy', type: 'group' };
       }
-      return self._groups.findBestPage(req, group, function(err, pageArg) {
+      return self.getGroupsManager().findBestPage(req, group, function(err, pageArg) {
         page = pageArg;
         return callback(err);
       });
