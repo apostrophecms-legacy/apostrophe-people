@@ -88,7 +88,14 @@ function AposPeople(optionsArg) {
       var $group = apos.fromTemplate($el.find('[data-groups] [data-group]'));
       $group.find('[data-name]').text(group.title);
       var $jobTitle = $group.find('[data-job-title]');
-      var extra = snippet.groupExtras[group._id];
+
+      var extra = function(){
+        if (snippet.groupExtras){
+          return snippet.groupExtras[group._id]
+        } else {
+          return false;
+        };
+      };
       if (extra && extra.jobTitle) {
         $group.find('[data-job-title]').text(extra.jobTitle);
       } else {
