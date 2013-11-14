@@ -32,7 +32,8 @@ people.People = function(options, callback) {
   _.defaults(options, {
     instance: 'person',
     name: options.name || 'people',
-    label: options.name || 'People',
+    label: options.label || 'People',
+    instanceLabel: options.instanceLabel || 'Person',
     icon: options.icon || 'people',
     groupsType: 'groups',
     // The default would be aposPeoplePostMenu, this is more natural

@@ -1,6 +1,6 @@
 {% include 'snippetMacros.html' %}
-<div class="apos-modal apos-template {% block class %}apos-new-person{% endblock %}">
-  <h3>{% block label %}New Person{% endblock %}</h3>
+<div class="apos-modal apos-template {% block class %}{{ newClass }}{% endblock %}">
+  <h3>{% block label %}New {{ instanceLabel | e }}{% endblock %}</h3>
   {% block topButtons %}
   {% endblock %}
   <div class="apos-modal-body">
@@ -35,12 +35,12 @@
 
       {{ snippetTags('tags', 'Tags') }}
       {{ snippetEmail('email', 'Email') }}
-      {{ snippetEmail('phone', 'Phone') }}
+      {{ snippetText('phone', 'Phone') }}
 
       {{ snippetBoolean('published', 'Profile Published') }}
-      {# The real work for these is in main.js, just get placeholders into the form #}
-      {{ snippetSingleton('thumbnail', 'Thumbnail') }}
-      {{ snippetArea('body', 'Bio') }}
+
+      {# All schema fields #}
+      {{ snippetAllFields(fields) }}
     </form>
   </div>
   {% block buttons %}
