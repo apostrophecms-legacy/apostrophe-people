@@ -1,0 +1,14 @@
+{% extends "loginBase.html" %}
+
+{% block subTitle %}Request to Change Your Password{% endblock %}
+{% block subHeading %}REQUEST TO CHANGE YOUR PASSWORD{% endblock %}
+{% block action %}/apos-people/reset-request{% endblock %}
+{% block fields %}
+  <div class="login-username">
+    <p>Please enter your username or email address. Then click "Send."</p>
+    <label>Username or Email</label>
+    <input type="text" name="username" />
+  </div>
+{% endblock %}
+{# Don't put any line breaks inside this block #}
+{% block buttonLabel %}Send{% endblock %}

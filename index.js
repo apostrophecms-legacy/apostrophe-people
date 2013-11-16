@@ -6,6 +6,7 @@ var util = require('util');
 var moment = require('moment');
 var passwordHash = require('password-hash');
 var pwgen = require('xkcd-pwgen');
+var nodemailer = require('nodemailer');
 
 // Creating an instance of the people module is easy:
 // var people = require('apostrophe-people')(options, callback);
@@ -47,6 +48,8 @@ people.People = function(options, callback) {
   self._groupsType = options.groupsType;
 
   options.modules = (options.modules || []).concat([ { dir: __dirname, name: 'people' } ]);
+
+  self.options = options;
 
   // TODO this is kinda ridiculous. We need to have a way to call a function that
   // adds some routes before the static route is added. Maybe the static route should
@@ -134,6 +137,152 @@ people.People = function(options, callback) {
       function generate() {
         return res.send({ password: pwgen.generatePassword() });
       }
+    });
+
+    self._app.get(self._action + '/reset-request', function(req, res) {
+      return res.send(self.renderPage('resetRequest', {}, 'anon'));
+    });
+
+    self._app.post(self._action + '/reset-request', function(req, res) {
+      var login;
+      var person;
+      var reset;
+      var done;
+      return async.series({
+        validate: function(callback) {
+          login = self._apos.sanitizeString(req.body.username);
+          if (!login) {
+            return callback('A response is required.');
+          }
+          return callback(null);
+        },
+        get: function(callback) {
+          return self._apos.pages.findOne({
+            type: 'person',
+            login: true,
+            email: { $ne: '' },
+            $or: [ { username: login }, { email: login } ]
+          }, function(err, page) {
+            if (err) {
+              return callback(err);
+            }
+            if (!page) {
+              return callback('No user with that username or email address was found, or there is no email address associated with your account. Please try again or contact your administrator.');
+            }
+            person = page;
+            return callback(null);
+          });
+        },
+        generate: function(callback) {
+          reset = self._apos.generateId();
+          return callback(null);
+        },
+        save: function(callback) {
+          return self._apos.pages.update({
+            _id: person._id
+          }, {
+            $set: {
+              resetPassword: reset
+            }
+          }, callback);
+        },
+        send: function(callback) {
+          var options = self.options.email || {};
+          _.defaults(options, {
+            transport: 'sendmail',
+            transportOptions: {},
+            subject: 'Your request to reset your password on %HOST%'
+          });
+          var transport = nodemailer.createTransport(options.transport, options.transportOptions);
+          var subject = options.subject.replace('%HOST%', req.host);
+          if (!req.absoluteUrl) {
+            // Man, Express really needs this
+            req.absoluteUrl = req.protocol + '://' + req.get('Host') + req.url;
+          }
+          var url = req.absoluteUrl.replace('reset-request', 'reset') + '?reset=' + reset;
+          transport.sendMail({
+            from: options.from || 'Password Reset <donot@reply.example.com>',
+            to: person.title.replace(/[<\>]/g, '') + ' <' + person.email + '>',
+            subject: subject,
+            text: self.render('resetRequestEmail.txt', {
+              url: url,
+              host: req.host
+            }),
+            html: self.render('resetRequestEmail.html', {
+              url: url,
+              host: req.host
+            })
+          }, function(err, response) {
+            if (err) {
+              return callback(err);
+            }
+            done = true;
+            return callback(null);
+          });
+        }
+      }, function(err) {
+        console.log(done);
+        return res.send(self.renderPage(done ? 'resetRequestSent' : 'resetRequest', { message: err }, 'anon'));
+      });
+    });
+
+    self._app.all(self._action + '/reset', function(req, res) {
+      var reset;
+      var person;
+      var password;
+      var template = 'reset';
+      return async.series({
+        validate: function(callback) {
+          reset = self._apos.sanitizeString(req.query.reset || req.body.reset);
+          if (!reset) {
+            return callback('You may have copied and pasted the link incorrectly. Please check the email you received.');
+          }
+          if (req.method === 'POST') {
+            if (req.body.password1 !== req.body.password2) {
+              return callback('Passwords do not match.');
+            }
+            password = self._apos.sanitizeString(req.body.password1);
+            if (!password) {
+              return callback('Please supply a new password.');
+            }
+          }
+          return callback(null);
+        },
+        get: function(callback) {
+          return self._apos.pages.findOne({ type: 'person', resetPassword: reset, login: true }, function(err, page) {
+            if (err) {
+              return callback(err);
+            }
+            console.log(err);
+            console.log(page);
+            console.log(reset);
+            if (!page) {
+              template = 'resetFail';
+              return callback(null);
+            }
+            person = page;
+            return callback(null);
+          });
+        },
+        update: function(callback) {
+          if (req.method !== 'POST') {
+            return callback(null);
+          }
+          password = passwordHash.generate(password);
+          return self._apos.pages.update({ _id: person._id }, { $set: { password: password }, $unset: { $resetPassword: 1 } }, function(err, count) {
+            if (err || (!count)) {
+              // A database error, or they didn't succeed because someone else logged in.
+              // Still not a good idea to disclose much information
+              template = 'resetFail';
+              return callback(null);
+            }
+            template = 'resetDone';
+            return callback(null);
+          });
+        }
+      }, function(err) {
+        return res.send(self.renderPage(template, { message: err, reset: reset }, 'anon'));
+      });
     });
   }
 
