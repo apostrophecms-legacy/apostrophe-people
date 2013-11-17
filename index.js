@@ -189,18 +189,29 @@ people.People = function(options, callback) {
         send: function(callback) {
           var options = self.options.email || {};
           _.defaults(options, {
+            // transport and transportOptions are ignored if self.options.mailer
+            // has been passed when constructing the module, as apostrophe-site will
+            // always do
             transport: 'sendmail',
             transportOptions: {},
             subject: 'Your request to reset your password on %HOST%'
           });
-          var transport = nodemailer.createTransport(options.transport, options.transportOptions);
+          if (!self._mailer) {
+            if (self.options.mailer) {
+              // This will always work with apostrophe-site
+              self._mailer = self.options.mailer;
+            } else {
+              // An alternative for those not using apostrophe-site
+              self._mailer = nodemailer.createTransport(options.transport, options.transportOptions);
+            }
+          }
           var subject = options.subject.replace('%HOST%', req.host);
           if (!req.absoluteUrl) {
             // Man, Express really needs this
             req.absoluteUrl = req.protocol + '://' + req.get('Host') + req.url;
           }
           var url = req.absoluteUrl.replace('reset-request', 'reset') + '?reset=' + reset;
-          transport.sendMail({
+          self._mailer.sendMail({
             from: options.from || 'Password Reset <donot@reply.example.com>',
             to: person.title.replace(/[<\>]/g, '') + ' <' + person.email + '>',
             subject: subject,
@@ -221,7 +232,6 @@ people.People = function(options, callback) {
           });
         }
       }, function(err) {
-        console.log(done);
         return res.send(self.renderPage(done ? 'resetRequestSent' : 'resetRequest', { message: err }, 'anon'));
       });
     });
@@ -253,9 +263,6 @@ people.People = function(options, callback) {
             if (err) {
               return callback(err);
             }
-            console.log(err);
-            console.log(page);
-            console.log(reset);
             if (!page) {
               template = 'resetFail';
               return callback(null);
