@@ -89,12 +89,12 @@ function AposPeople(optionsArg) {
       $group.find('[data-name]').text(group.title);
       var $jobTitle = $group.find('[data-job-title]');
 
-      var extra = function(){
+      var extra = function() {
         if (snippet.groupExtras){
-          return snippet.groupExtras[group._id]
+          return snippet.groupExtras[group._id];
         } else {
           return false;
-        };
+        }
       };
       if (extra && extra.jobTitle) {
         $group.find('[data-job-title]').text(extra.jobTitle);
@@ -123,6 +123,61 @@ function AposPeople(optionsArg) {
   self.beforeSave = function($el, data, callback) {
     findExtraFields($el, data, callback);
   };
+
+  if (self.manager) {
+    // Edit a personal profile
+    $('body').on('click', '[data-edit-profile]', function() {
+      $.getJSON(self._action + '/profile', function(data) {
+        if (data.status !== 'ok') {
+          alert('A server error occurred.');
+          return;
+        }
+        var profile = data.profile;
+        var fields = data.fields;
+        var $profile = $(data.template);
+        apos.modal($profile, {
+          init: function(callback) {
+            // TODO: eliminate the kludge of these fields not being in the schema
+            var $firstName = $profile.findByName('first-name');
+            var $lastName = $profile.findByName('last-name');
+            var $title = $profile.findByName('title');
+            $firstName.val(profile.firstName);
+            $lastName.val(profile.lastName);
+            $title.val(profile.title);
+            return self.populateSomeFields($profile, fields, profile, callback);
+          },
+          save: function(callback) {
+            // TODO: eliminate the kludge of these fields not being in the schema
+            var $firstName = $profile.findByName('first-name');
+            var $lastName = $profile.findByName('last-name');
+            var $title = $profile.findByName('title');
+            // Don't trash these fields if they are not in the form
+            if ($firstName.length) {
+              profile.firstName = $firstName.val();
+            }
+            if ($lastName.length) {
+              profile.lastName = $lastName.val();
+            }
+            if ($title.length) {
+              profile.title = $title.val();
+            }
+            return self.convertSomeFields($profile, fields, profile, function() {
+              $.jsonCall(self._action + '/profile', profile, function(result) {
+                if (result.status !== 'ok') {
+                  alert('An error occurred. Please try again.');
+                  return callback('error');
+                }
+                // Profile edits can change the user's name, which has ripple effects
+                // possibly including the outer layout. So refresh the page
+                window.location.reload();
+              });
+            });
+          }
+        });
+      });
+      return false;
+    });
+  }
 }
 
 AposPeople.addWidgetType = function(options) {

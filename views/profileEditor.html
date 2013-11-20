@@ -1,0 +1,24 @@
+{% include 'snippetMacros.html' %}
+<div class="apos-modal apos-template apos-person-profile">
+  <h3>My Profile</h3>
+  {% block topButtons %}
+  {% endblock %}
+  <div class="apos-modal-body">
+    <form>
+      {# Hardcoded fields (TODO: merge them into the schema across Apostrophe) #}
+      {# NOTE: if you remove these they will not be changed by profile updates. #}
+      {{ snippetText('first-name', 'First Name') }}
+      {{ snippetText('last-name', 'Last Name') }}
+      {{ snippetText('title', 'Full Name') }}
+
+      {# All schema fields #}
+      {{ snippetAllFields(fields) }}
+    </form>
+  </div>
+  <div class="apos-modal-footer">
+    <div class="apos-modal-footer-buttons">
+      <a href="#" data-action="dismiss" class="apos-control apos-button apos-cancel">Cancel</a>
+      <a href="#" class="apos-control apos-button apos-save">Save Changes</a>
+    </div>
+  </div>
+</div>

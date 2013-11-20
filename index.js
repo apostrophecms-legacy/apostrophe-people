@@ -38,12 +38,27 @@ people.People = function(options, callback) {
     icon: options.icon || 'people',
     groupsType: 'groups',
     // The default would be aposPeoplePostMenu, this is more natural
-    menuName: 'aposPeopleMenu'
+    menuName: 'aposPeopleMenu',
+    profileFields: [
+      'thumbnail', 'body'
+    ],
+    // The plan is for the groups module to provide an enhanced Directory widget
+    // that also covers people
+    widget: false
   });
 
-  // The groups module provides an enhanced Directory widget that
-  // also covers displaying people
-  _.defaults(options, { widget: false });
+  options.addFields = [ {
+    name: 'thumbnail',
+    label: 'Picture',
+    type: 'singleton',
+    widgetType: 'slideshow',
+    options: {
+      label: 'Picture',
+      limit: 1
+    }
+  } ].concat(options.addFields || []);
+
+  self._profileFields = options.profileFields;
 
   self._groupsType = options.groupsType;
 
@@ -275,7 +290,7 @@ people.People = function(options, callback) {
           if (req.method !== 'POST') {
             return callback(null);
           }
-          password = passwordHash.generate(password);
+          password = self.hashPassword();
           return self._apos.pages.update({ _id: person._id }, { $set: { password: password }, $unset: { $resetPassword: 1 } }, function(err, count) {
             if (err || (!count)) {
               // A database error, or they didn't succeed because someone else logged in.
@@ -290,6 +305,71 @@ people.People = function(options, callback) {
       }, function(err) {
         return res.send(self.renderPage(template, { message: err, reset: reset }, 'anon'));
       });
+    });
+
+    self._app.all(self._action + '/profile', function(req, res) {
+      if (!req.user) {
+        return res.send({ 'status': 'notfound' });
+      }
+      var subsetFields = _.filter(self.convertFields, function(field) {
+        return _.contains(self._profileFields, field.name);
+      });
+      var snippet = { areas: {} };
+
+      // TODO: merge these fields into the schema to remove redundant code like this
+      snippet.firstName = req.user.firstName;
+      snippet.lastName = req.user.lastName;
+      snippet.title = req.user.title;
+
+      _.each(subsetFields, function(field) {
+        if ((field.type === 'area') || (field.type === 'singleton')) {
+          snippet.areas[field.name] = req.user.areas[field.name];
+        } else {
+          snippet[field.name] = req.user[field.name];
+        }
+      });
+      if (req.method === 'POST') {
+        var set = { areas: {} };
+        self.convertSomeFields(subsetFields, 'form', req.body, set);
+        if (req.body.firstName !== undefined) {
+          set.firstName = req.body.firstName;
+        }
+        if (req.body.lastName !== undefined) {
+          set.lastName = req.body.lastName;
+        }
+        if (req.body.title !== undefined) {
+          set.title = req.body.title;
+        }
+        var user;
+        // We can't just do an update query because we want
+        // overrides of putOne to be respected. Get the user again,
+        // via getPage, so that no joins or excessive cleverness like
+        // deletion of the password field come into play.
+        return async.series({
+          get: function(callback) {
+            console.log('get');
+            return self._apos.getPage(req, req.user.slug, { permissions: false }, function(err, snippet) {
+              if (err) {
+                return callback(err);
+              }
+              if (!snippet) {
+                return callback('notfound');
+              }
+              user = snippet;
+              return callback(null);
+            });
+          },
+          put: function(callback) {
+            console.log('put');
+            extend(true, user, set);
+            return self.putOne(req, req.user.slug, { permissions: false }, user, callback);
+          }
+        }, function(err) {
+          res.send({ status: err ? 'error' : 'ok' });
+        });
+      } else {
+        return res.send({ status: 'ok', profile: snippet, fields: subsetFields, template: self.render('profileEditor', { fields: subsetFields }) });
+      }
     });
   }
 
@@ -422,12 +502,7 @@ people.People = function(options, callback) {
       if (_password === null) {
         _password = self._apos.generateId();
       }
-      // password-hash npm module generates a lovely string formatted:
-      //
-      // algorithmname:salt:hash
-      //
-      // With a newly generated salt. So before you ask, yes, a salt is being used here
-      snippet.password = passwordHash.generate(_password);
+      snippet.password = self.hashPassword(_password);
     }
 
     snippet.email = self._apos.sanitizeString(data.email);
@@ -444,6 +519,17 @@ people.People = function(options, callback) {
     } else {
       return callback(null);
     }
+  };
+
+  // Hash a password for storage in mongodb.
+  // The password-hash npm module generates a lovely string formatted:
+  //
+  // algorithmname:salt:hash
+  //
+  // With a newly generated salt.
+
+  self.hashPassword = function(password) {
+    return passwordHash.generate(password);
   };
 
   var superAddApiCriteria = self.addApiCriteria;

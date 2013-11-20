@@ -70,3 +70,17 @@ Many organizations have their own way of ranking people within groups or departm
     }
 
 Once you enable this option, you will be able to drag and drop people to reorder them in the list of persons that are members of each group.
+
+### Password Reset
+
+Users may reset their password via email confirmation, as long as they have a valid email address and a link to "/apos-people/reset-request" is present in the `login.html` template, which is true in current versions of the sandbox.
+
+However for those emails to be delivered you will need to set a valid "from" address when configuring the people module. Its options must include:
+
+{
+  email: {
+    from: "Some Person <someone@somewhere.com>"
+  }
+}
+
+There is a default "from" address but sendmail will complain that it is not valid and users will see an error. So make sure you configure that.
