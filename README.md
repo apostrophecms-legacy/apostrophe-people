@@ -84,3 +84,11 @@ However for those emails to be delivered you will need to set a valid "from" add
 }
 
 There is a default "from" address but sendmail will complain that it is not valid and users will see an error. So make sure you configure that.
+
+### Profiles
+
+All users who belong to a group with at least "guest" access may edit their profile as long as you include the relevant markup in `outerLayout.html` (see the sandbox for an example).
+
+You may choose the fields that are editable by the end user via the `profileFields` option. The first name, last name, and title fields are independent of the schema, but if you do not present them in the form they will not be overwritten when the profile is saved. You can customize the form by copying `profileEditor.html` from the people module to `lib/modules/apostrophe-people/profileEditor.html`.
+
+
