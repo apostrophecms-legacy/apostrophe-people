@@ -4,7 +4,6 @@ var extend = require('extend');
 var snippets = require('apostrophe-snippets');
 var util = require('util');
 var moment = require('moment');
-var passwordHash = require('password-hash');
 var pwgen = require('xkcd-pwgen');
 var nodemailer = require('nodemailer');
 
@@ -40,23 +39,77 @@ people.People = function(options, callback) {
     // The default would be aposPeoplePostMenu, this is more natural
     menuName: 'aposPeopleMenu',
     profileFields: [
-      'thumbnail', 'body'
+      'firstName', 'lastName', 'title', 'thumbnail', 'body'
     ],
     // The plan is for the groups module to provide an enhanced Directory widget
     // that also covers people
     widget: false
   });
 
-  options.addFields = [ {
-    name: 'thumbnail',
-    label: 'Picture',
-    type: 'singleton',
-    widgetType: 'slideshow',
-    options: {
+  options.addFields = [
+    {
+      name: 'title',
+      label: 'Full Name',
+      type: 'string'
+    },
+    {
+      name: 'thumbnail',
       label: 'Picture',
-      limit: 1
+      type: 'singleton',
+      widgetType: 'slideshow',
+      options: {
+        label: 'Picture',
+        limit: 1
+      }
+    },
+    {
+      before: 'title',
+      name: 'firstName',
+      label: 'First Name',
+      type: 'string',
+
+      // Legacy field name. Do not use this feature in new modules
+      legacy: 'first-name'
+    },
+    {
+      name: 'lastName',
+      label: 'Last Name',
+      type: 'string',
+
+      // Legacy field name. Do not use this feature in new modules
+      legacy: 'last-name'
+    },
+    {
+      after: 'title',
+      name: 'login',
+      label: 'Can Log In',
+      type: 'boolean',
+      def: false
+    },
+    {
+      name: 'username',
+      label: 'Username',
+      type: 'string'
+    },
+    {
+      name: 'password',
+      label: 'Password',
+      type: 'password',
+      template: 'password.html'
+    },
+    {
+      name: 'email',
+      label: 'Email',
+      type: 'string'
+    },
+    {
+      name: 'phone',
+      label: 'Phone',
+      type: 'string'
     }
-  } ].concat(options.addFields || []);
+  ].concat(options.addFields || []);
+
+  options.removeFields = [ 'hideTitle' ].concat(options.removeFields || []);
 
   self._profileFields = options.profileFields;
 
@@ -150,7 +203,7 @@ people.People = function(options, callback) {
         return generate();
       });
       function generate() {
-        return res.send({ password: pwgen.generatePassword() });
+        return res.send({ password: pwgen.generatePassword().replace(/\-/g, ' ') });
       }
     });
 
@@ -311,17 +364,12 @@ people.People = function(options, callback) {
       if (!req.user) {
         return res.send({ 'status': 'notfound' });
       }
-      var subsetFields = _.filter(self.convertFields, function(field) {
+      var schemaSubset = _.filter(self.schema, function(field) {
         return _.contains(self._profileFields, field.name);
       });
       var snippet = { areas: {} };
 
-      // TODO: merge these fields into the schema to remove redundant code like this
-      snippet.firstName = req.user.firstName;
-      snippet.lastName = req.user.lastName;
-      snippet.title = req.user.title;
-
-      _.each(subsetFields, function(field) {
+      _.each(schemaSubset, function(field) {
         if ((field.type === 'area') || (field.type === 'singleton')) {
           snippet.areas[field.name] = req.user.areas[field.name];
         } else {
@@ -330,16 +378,7 @@ people.People = function(options, callback) {
       });
       if (req.method === 'POST') {
         var set = { areas: {} };
-        self.convertSomeFields(subsetFields, 'form', req.body, set);
-        if (req.body.firstName !== undefined) {
-          set.firstName = req.body.firstName;
-        }
-        if (req.body.lastName !== undefined) {
-          set.lastName = req.body.lastName;
-        }
-        if (req.body.title !== undefined) {
-          set.title = req.body.title;
-        }
+        self.convertSomeFields(schemaSubset, 'form', req.body, set);
         var user;
         // We can't just do an update query because we want
         // overrides of putOne to be respected. Get the user again,
@@ -368,7 +407,7 @@ people.People = function(options, callback) {
           res.send({ status: err ? 'error' : 'ok' });
         });
       } else {
-        return res.send({ status: 'ok', profile: snippet, fields: subsetFields, template: self.render('profileEditor', { fields: subsetFields }) });
+        return res.send({ status: 'ok', profile: snippet, fields: schemaSubset, template: self.render('profileEditor', { fields: schemaSubset }) });
       }
     });
   }
@@ -489,12 +528,6 @@ people.People = function(options, callback) {
   self.beforeSave = function(req, data, snippet, callback) {
     var oldUsername = snippet.username;
 
-    snippet.firstName = self._apos.sanitizeString(data.firstName, 'Jane');
-    snippet.lastName = self._apos.sanitizeString(data.lastName, 'Public');
-
-    snippet.login = self._apos.sanitizeBoolean(data.login);
-    snippet.username = self._apos.sanitizeString(data.username);
-
     // Leading _ is a mnemonic reminding me to NOT store plaintext passwords directly!
     var _password = self._apos.sanitizeString(data.password, null);
 
@@ -529,7 +562,7 @@ people.People = function(options, callback) {
   // With a newly generated salt.
 
   self.hashPassword = function(password) {
-    return passwordHash.generate(password);
+    return self._apos.hashPassword(password);
   };
 
   var superAddApiCriteria = self.addApiCriteria;

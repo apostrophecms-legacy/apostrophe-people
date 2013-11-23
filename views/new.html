@@ -1,49 +1,17 @@
-{% include 'snippetMacros.html' %}
-<div class="apos-modal apos-template {% block class %}{{ newClass }}{% endblock %}">
-  <h3>{% block label %}New {{ instanceLabel | e }}{% endblock %}</h3>
-  {% block topButtons %}
+{% extends 'newBase.html' %}
+{% block insideForm %}
+
+  {{ snippetAllFields(fields, { to: 'password' }) }}
+  {% block afterPassword %}
+    <div class="apos-suggested-password" data-suggested-password>This user's default password is: <span data-suggestion class="apos-suggestion">js populates me</span></div>
   {% endblock %}
-  <div class="apos-modal-body">
-    <form>
-      {# We use CSS-style names (with hyphens) for fields in forms since #}
-      {# forms don't support mixed case and we have apos.cssName to convert them #}
-      {{ snippetText('first-name', 'First Name') }}
-      {{ snippetText('last-name', 'Last Name') }}
-      {# title is universal across all snippets and should be the person's full name as #}
-      {# they prefer to see it online. Please use 'jobTitle' if you need a property for #}
-      {# someone's position at work #}
-      {{ snippetText('title', 'Name') }}
+  {{ snippetAllFields(fields, { after: 'password' }) }}
 
-      <div class="apos-login-group">
-        {{ snippetBoolean('login', 'Can Log In') }}
-        {{ snippetText('username', 'Username') }}
-        <div class="apos-suggested-password" data-suggested-password>This user's default password is: <span data-suggestion class="apos-suggestion">js populates me</span></div>
-        {{ snippetPassword('password', 'Password') }}
-        {% block afterPassword %}{% endblock %}
-      </div>
-
-      {# Slugs become editable later, allow the edit template to add them here #}
-      {% block slug %}{% endblock %}
-
-      <div class="apos-person-read-only-groups">
-        <h4>Groups</h4>
-        <p>Edit this user's group memberships by editing the groups in question.</p>
-        <ul data-groups class="apos-person-groups">
-          <li data-group class="apos-template apos-person-group"><span class="apos-person-group-name" data-name>Group Name</span><span class="apos-person-job-title" data-job-title>Job Title</span></li>
-        </ul>
-      </div>
-
-      {{ snippetTags('tags', 'Tags') }}
-      {{ snippetEmail('email', 'Email') }}
-      {{ snippetText('phone', 'Phone') }}
-
-      {{ snippetBoolean('published', 'Profile Published') }}
-
-      {# All schema fields #}
-      {{ snippetAllFields(fields) }}
-    </form>
+  <div class="apos-person-read-only-groups">
+    <h4>Groups</h4>
+    <p>Edit this user's group memberships by editing the groups in question.</p>
+    <ul data-groups class="apos-person-groups">
+      <li data-group class="apos-template apos-person-group"><span class="apos-person-group-name" data-name>Group Name</span><span class="apos-person-job-title" data-job-title>Job Title</span></li>
+    </ul>
   </div>
-  {% block buttons %}
-  {{ snippetNewButtons() }}
-  {% endblock %}
-</div>
+{% endblock %}

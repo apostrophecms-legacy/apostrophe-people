@@ -5,13 +5,6 @@
   {% endblock %}
   <div class="apos-modal-body">
     <form>
-      {# Hardcoded fields (TODO: merge them into the schema across Apostrophe) #}
-      {# NOTE: if you remove these they will not be changed by profile updates. #}
-      {{ snippetText('first-name', 'First Name') }}
-      {{ snippetText('last-name', 'Last Name') }}
-      {{ snippetText('title', 'Full Name') }}
-
-      {# All schema fields #}
       {{ snippetAllFields(fields) }}
     </form>
   </div>

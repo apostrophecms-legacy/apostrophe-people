@@ -9,35 +9,19 @@ function AposPeople(optionsArg) {
   $.extend(options, optionsArg);
   AposSnippets.call(self, options);
 
-  var simpleFields = [ 'firstName', 'lastName', 'login', 'username', 'email', 'phone' ];
-
-  function findExtraFields($el, data, callback) {
-    _.each(simpleFields, function(field) {
-      data[field] = $el.findByName(apos.cssName(field)).val();
-    });
-
-    data.password = $el.findByName('password').val();
-
-    callback();
-  }
-
   self.afterPopulatingEditor = function($el, snippet, callback) {
-    _.each(simpleFields, function(field) {
-      $el.findByName(apos.cssName(field)).val(snippet[field]);
-    });
-    // Boolean fields must get an explicit '1' or '0' for
-    // the select element
-    $el.find('[name="login"]').val(snippet.login ? '1' : '0');
+
+    // Custom behaviors to conveniently set full name and title
+
     var usernameFocused = false;
-    var $firstName = $el.findByName('first-name');
-    var $lastName = $el.findByName('last-name');
+
+    var $firstName = $el.findByName('firstName');
+    var $lastName = $el.findByName('lastName');
 
     $firstName.change(updateName);
     $lastName.change(updateName);
     $firstName.change(updateUsername);
     $lastName.change(updateUsername);
-
-    // Do not prepopulate password
 
     // Suggest full name if none yet or it doesn't have both first and last yet
     function updateName() {
@@ -77,13 +61,13 @@ function AposPeople(optionsArg) {
 
     if (snippet.username === undefined) {
       recommendPassword();
-    } else {
-      // Hide this when editing existing users
-      $el.find('[data-suggested-password]').hide();
     }
 
     // Read-only display of group memberships and titles. TODO:
-    // allow this to be edited from the person's side.
+    // allow this to be edited from the person's side. Even more
+    // important TODO: fix it to work like schema joins so it can
+    // just be one.
+
     _.each(snippet._groups || [], function(group) {
       var $group = apos.fromTemplate($el.find('[data-groups] [data-group]'));
       $group.find('[data-name]').text(group.title);
@@ -120,10 +104,6 @@ function AposPeople(optionsArg) {
     }
   };
 
-  self.beforeSave = function($el, data, callback) {
-    findExtraFields($el, data, callback);
-  };
-
   if (self.manager) {
     // Edit a personal profile
     $('body').on('click', '[data-edit-profile]', function() {
@@ -137,30 +117,9 @@ function AposPeople(optionsArg) {
         var $profile = $(data.template);
         apos.modal($profile, {
           init: function(callback) {
-            // TODO: eliminate the kludge of these fields not being in the schema
-            var $firstName = $profile.findByName('first-name');
-            var $lastName = $profile.findByName('last-name');
-            var $title = $profile.findByName('title');
-            $firstName.val(profile.firstName);
-            $lastName.val(profile.lastName);
-            $title.val(profile.title);
             return self.populateSomeFields($profile, fields, profile, callback);
           },
           save: function(callback) {
-            // TODO: eliminate the kludge of these fields not being in the schema
-            var $firstName = $profile.findByName('first-name');
-            var $lastName = $profile.findByName('last-name');
-            var $title = $profile.findByName('title');
-            // Don't trash these fields if they are not in the form
-            if ($firstName.length) {
-              profile.firstName = $firstName.val();
-            }
-            if ($lastName.length) {
-              profile.lastName = $lastName.val();
-            }
-            if ($title.length) {
-              profile.title = $title.val();
-            }
             return self.convertSomeFields($profile, fields, profile, function() {
               $.jsonCall(self._action + '/profile', profile, function(result) {
                 if (result.status !== 'ok') {
