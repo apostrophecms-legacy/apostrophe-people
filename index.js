@@ -386,7 +386,6 @@ people.People = function(options, callback) {
         // deletion of the password field come into play.
         return async.series({
           get: function(callback) {
-            console.log('get');
             return self._apos.getPage(req, req.user.slug, { permissions: false }, function(err, snippet) {
               if (err) {
                 return callback(err);
@@ -399,7 +398,6 @@ people.People = function(options, callback) {
             });
           },
           put: function(callback) {
-            console.log('put');
             extend(true, user, set);
             return self.putOne(req, req.user.slug, { permissions: false }, user, callback);
           }
