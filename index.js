@@ -280,7 +280,7 @@ people.People = function(options, callback) {
           }
           var url = req.absoluteUrl.replace('reset-request', 'reset') + '?reset=' + reset;
           self._mailer.sendMail({
-            from: options.from || 'Password Reset <donot@reply.example.com>',
+            from: options.from || 'Password Reset <donotreply@example.com>',
             to: person.title.replace(/[<\>]/g, '') + ' <' + person.email + '>',
             subject: subject,
             text: self.render('resetRequestEmail.txt', {
