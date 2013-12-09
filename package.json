@@ -1,6 +1,6 @@
 {
   "name": "apostrophe-people",
-  "version": "0.0.30",
+  "version": "0.0.31",
   "description": "Staff directories, user accounts and personal profiles for the Apostrophe content management system",
   "main": "index.js",
   "scripts": {
