@@ -343,7 +343,7 @@ people.People = function(options, callback) {
           if (req.method !== 'POST') {
             return callback(null);
           }
-          password = self.hashPassword();
+          password = self.hashPassword(password);
           return self._apos.pages.update({ _id: person._id }, { $set: { password: password }, $unset: { $resetPassword: 1 } }, function(err, count) {
             if (err || (!count)) {
               // A database error, or they didn't succeed because someone else logged in.
@@ -560,6 +560,7 @@ people.People = function(options, callback) {
   // With a newly generated salt.
 
   self.hashPassword = function(password) {
+    console.log(password)
     return self._apos.hashPassword(password);
   };
 
