@@ -91,4 +91,29 @@ All users who belong to a group with at least "guest" access may edit their prof
 
 You may choose the fields that are editable by the end user via the `profileFields` option. The first name, last name, and title fields are independent of the schema, but if you do not present them in the form they will not be overwritten when the profile is saved. You can customize the form by copying `profileEditor.html` from the people module to `lib/modules/apostrophe-people/profileEditor.html`.
 
+### Applying For Accounts
+
+People may apply for accounts with login privileges if you set the `apply` option to `true` when configuring the `apostrophe-people` module.
+
+The `applyFields` option determines the fields that people are invited to fill out when they apply for an account. The following list is the default, and you should specify at least these fields. You may specify additional fields that exist in your schema (see `addFields`).
+
+'''javascript
+[ 'username', 'password', 'firstName', 'lastName', 'title', 'email' ]
+'''
+
+The above fields are required and the user will not be permitted to complete the application form without supplying them.
+
+The `apply.html` template is used to present the application form.
+
+#### Group Membership For New Accounts
+
+Persons who have just confirmed their accounts are added to a group called `Guests`, which is created if it does not exist; if this group is created on the fly it is given the `guest` permission.
+
+If this does not suit your purposes, set the `applyGroup` option to an explicit group name, or to `false` if no group membership is desired. You may also set `applyGroupPermissions` to an array of permissions to be given to that group if it does not already exist. This array may be empty.
+
+#### Account Confirmation
+
+By default, people who apply for accounts must confirm by clicking a link delivered by email as soon as they submit their application. If you wish you can disable this behavior by setting the `confirm` option to `false`. Be aware that this can lead to a much higher rate of spam accounts.
+
+If you do not set `confirm` to `false`, an email is sent with the text found in the `confirmEmail.html` and `confirmEmail.txt` templates, which you may override at project level in your `lib/modules/apostrophe-people/views` folder.
 

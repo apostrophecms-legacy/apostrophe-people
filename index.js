@@ -29,6 +29,10 @@ function people(options, callback) {
 
 people.People = function(options, callback) {
   var self = this;
+
+  // Only admins can edit this data type
+  self._adminOnly = true;
+
   _.defaults(options, {
     instance: 'person',
     name: options.name || 'people',
@@ -41,6 +45,20 @@ people.People = function(options, callback) {
     profileFields: [
       'firstName', 'lastName', 'title', 'thumbnail', 'body'
     ],
+    // By default strangers cannot apply for accounts
+    apply: false,
+    // Only relevant if apply: true is passed
+    applyFields: [
+      'username', 'password', 'firstName', 'lastName', 'title', 'email'
+    ],
+    // Only relevant if apply: true is passed
+    // Should be the title, not the slug, as it may be
+    // necessary to create the group
+    applyGroup: 'Guests',
+    // Only relevant if apply: true is passed
+    applyGroupPermissions: [ 'guest' ],
+    // Only relevant if apply: true is passed
+    applyConfirm: true,
     // The plan is for the groups module to provide an enhanced Directory widget
     // that also covers people
     widget: false
@@ -94,8 +112,7 @@ people.People = function(options, callback) {
     {
       name: 'password',
       label: 'Password',
-      type: 'password',
-      template: 'password.html'
+      type: 'password'
     },
     {
       name: 'email',
@@ -110,8 +127,6 @@ people.People = function(options, callback) {
   ].concat(options.addFields || []);
 
   options.removeFields = [ 'hideTitle' ].concat(options.removeFields || []);
-
-  self._profileFields = options.profileFields;
 
   self._groupsType = options.groupsType;
 
@@ -173,13 +188,19 @@ people.People = function(options, callback) {
 
   function addRoutes() {
     self._app.post(self._action + '/username-unique', function(req, res) {
-      self._apos.permissions(req, 'edit-people', null, function(err) {
-        if (err) {
-          res.statusCode = 404;
-          return res.send('notfound');
-        }
-        return generate();
-      });
+
+      generate();
+
+      // With this rule in place it is difficult to offer any help to users
+      // in choosing unique usernames during the application process. -Tom
+      //
+      // self._apos.permissions(req, 'edit-people', null, function(err) {
+      //   if (err) {
+      //     res.statusCode = 404;
+      //     return res.send('notfound');
+      //   }
+      //   return generate();
+      // });
 
       function generate() {
         var username = req.body.username;
@@ -195,13 +216,15 @@ people.People = function(options, callback) {
     });
 
     self._app.post(self._action + '/generate-password', function(req, res) {
-      self._apos.permissions(req, 'edit-profile', null, function(err) {
-        if (err) {
-          res.statusCode = 404;
-          return res.send('notfound');
-        }
-        return generate();
-      });
+      // We need to open this up so that users can apply for accounts
+      // self._apos.permissions(req, 'edit-profile', null, function(err) {
+      //   if (err) {
+      //     res.statusCode = 404;
+      //     return res.send('notfound');
+      //   }
+      //   return generate();
+      // });
+      generate();
       function generate() {
         return res.send({ password: pwgen.generatePassword().replace(/\-/g, ' ') });
       }
@@ -255,43 +278,7 @@ people.People = function(options, callback) {
           }, callback);
         },
         send: function(callback) {
-          var options = self.options.email || {};
-          _.defaults(options, {
-            // transport and transportOptions are ignored if self.options.mailer
-            // has been passed when constructing the module, as apostrophe-site will
-            // always do
-            transport: 'sendmail',
-            transportOptions: {},
-            subject: 'Your request to reset your password on %HOST%'
-          });
-          if (!self._mailer) {
-            if (self.options.mailer) {
-              // This will always work with apostrophe-site
-              self._mailer = self.options.mailer;
-            } else {
-              // An alternative for those not using apostrophe-site
-              self._mailer = nodemailer.createTransport(options.transport, options.transportOptions);
-            }
-          }
-          var subject = options.subject.replace('%HOST%', req.host);
-          if (!req.absoluteUrl) {
-            // Man, Express really needs this
-            req.absoluteUrl = req.protocol + '://' + req.get('Host') + req.url;
-          }
-          var url = req.absoluteUrl.replace('reset-request', 'reset') + '?reset=' + reset;
-          self._mailer.sendMail({
-            from: options.from || 'Password Reset <donotreply@example.com>',
-            to: person.title.replace(/[<\>]/g, '') + ' <' + person.email + '>',
-            subject: subject,
-            text: self.render('resetRequestEmail.txt', {
-              url: url,
-              host: req.host
-            }),
-            html: self.render('resetRequestEmail.html', {
-              url: url,
-              host: req.host
-            })
-          }, function(err, response) {
+          return self.mail(req, to, self.options.resetSubject || 'Your request to reset your password on %HOST%', 'resetRequestEmail', { url: self._action + '/reset' }, function(err) {
             if (err) {
               return callback(err);
             }
@@ -365,7 +352,7 @@ people.People = function(options, callback) {
         return res.send({ 'status': 'notfound' });
       }
       var schemaSubset = _.filter(self.schema, function(field) {
-        return _.contains(self._profileFields, field.name);
+        return _.contains(options.profileFields, field.name);
       });
       var snippet = { areas: {} };
 
@@ -408,6 +395,149 @@ people.People = function(options, callback) {
         return res.send({ status: 'ok', profile: snippet, fields: schemaSubset, template: self.render('profileEditor', { fields: schemaSubset }) });
       }
     });
+
+    if (options.apply) {
+      self._app.all(self._action + '/apply', function(req, res) {
+        if (req.user) {
+          return res.send({ 'status': 'loggedin' });
+        }
+        var schemaSubset = _.filter(self.schema, function(field) {
+          return _.contains(options.applyFields, field.name);
+        });
+        // These fields might not be required for an admin editing a person but
+        // for an applicant they are mandatory
+        var required = [ 'firstName', 'lastName', 'title', 'email', 'username', 'password' ];
+        _.each(schemaSubset, function(field) {
+          if (_.contains(required, field.name)) {
+            field.required = true;
+          }
+        });
+        var group;
+        if (req.method === 'POST') {
+          var user = { applicant: true, applied: new Date(), areas: {} };
+          self.convertSomeFields(schemaSubset, 'form', req.body, user);
+          return async.series({
+            ensureGroup: function(callback) {
+              if (options.applyGroup === false) {
+                return callback(null);
+              }
+              self.getGroupsManager().getOne(req, { title: options.applyGroup }, { permissions: false }, function(err, _group) {
+                if (_group) {
+                  group = _group;
+                  return callback(null);
+                }
+                group = {
+                  title: options.applyGroup,
+                  permissions: options.applyGroupPermissions || []
+                };
+                return self.getGroupsManager().putOne(req, { permissions: false }, group, callback);
+              });
+            },
+            beforeSave: function(callback) {
+              // Hashes password (can the schema handle this on its own?)
+              return self.beforeSave(req, req.body, user, callback);
+            },
+            previousApplication: function(callback) {
+              if (options.applyConfirm === false) {
+                return callback(null);
+              }
+              // If they applied before and have never confirmed, let them
+              // try again, don't lock out their email address forever
+              return self.getOne(req, { email: user.email, applyConfirm: { $exists: true }, login: { $ne: true } }, { permissions: false }, function(err, existing) {
+                if (err) {
+                  return callback(err);
+                }
+                if (!existing) {
+                  return callback(null);
+                }
+                return self._apos.pages.remove({ _id: existing._id }, callback);
+              });
+            },
+            put: function(callback) {
+              user.groupIds = [ group._id ];
+              if (options.applyConfirm === false) {
+                user.login = true;
+              } else {
+                user.applyConfirm = self._apos.generateId();
+              }
+              return self.putOne(req, { permissions: false }, user, callback);
+            },
+            email: function(callback) {
+              if (options.applyConfirm === false) {
+                return callback(null);
+              }
+              return self.mail(req, user, self.options.applySubject || 'Your request to create an account on %HOST%', 'applyEmail', { url: self._action + '/confirm/' + user.applyConfirm }, function(err) {
+                if (err) {
+                  // Remove the person we just inserted if we have no way
+                  // of communicating their confirmation link to them
+                  return self._apos.pages.remove({ _id: user._id }, function() {
+                    // This is on purpose, the email error is more interesting
+                    // than any error from remove
+                    return callback(err);
+                  });
+                }
+                return callback(null);
+              });
+            }
+          }, function(err) {
+            // Handle instant login if we're not doing confirmation emails
+            if ((options.applyConfirm === false) && (!err)) {
+              return async.series({
+                // Apply the same logic we would apply to a normal login
+                beforeSignin: function(callback) {
+                  return self._apos.appyBeforeSignin(user, callback);
+                },
+                // use passport's login method to finish the job
+                login: function(callback) {
+                  return req.login(user, callback);
+                }
+              }, function(err) {
+                if (err) {
+                  return res.send({ status: 'error' });
+                } else {
+                  delete user.password;
+                  self._pages.prunePage(user);
+                  return res.send({ status: 'ok', confirmed: true, user: user });
+                }
+              });
+            }
+            var safeErrors = [ 'duplicateEmail', 'duplicateUsername' ];
+            var status = err ? (_.contains(safeErrors, err.toString()) ? err.toString() : 'error') : 'ok';
+            res.send({ status: status });
+          });
+        } else {
+          var piece = self.getGroupsManager().newInstance();
+          return res.send({ status: 'ok', fields: schemaSubset, piece: piece, template: self.render('apply', { fields: schemaSubset }) });
+        }
+      });
+
+      self._app.all(self._action + '/confirm/:code', function(req, res) {
+        var reset;
+        var person;
+        return async.series({
+          validate: function(callback) {
+            confirm = self._apos.sanitizeString(req.params.code);
+            if (!confirm) {
+              return callback('unconfirmed');
+            }
+            return callback(null);
+          },
+          confirm: function(callback) {
+            return self._apos.pages.update({ type: 'person', applyConfirm: confirm, login: { $ne: true } }, { $set: { login: true }, $unset: { applyConfirm: 1 } }, function(err, count) {
+              if (err) {
+                return callback(err);
+              }
+              if (!count) {
+                return callback('unconfirmed');
+              }
+              return callback(null);
+            });
+          },
+        }, function(err) {
+          return res.send(self.renderPage(err ? err : 'confirmed', { message: err, reset: reset }, 'anon'));
+        });
+      });
+    }
   }
 
   // Call the base class constructor. Don't pass the callback, we want to invoke it
@@ -525,6 +655,7 @@ people.People = function(options, callback) {
 
   self.beforeSave = function(req, data, snippet, callback) {
     var oldUsername = snippet.username;
+    var oldEmail = snippet.email;
 
     // Leading _ is a mnemonic reminding me to NOT store plaintext passwords directly!
     var _password = self._apos.sanitizeString(data.password, null);
@@ -536,20 +667,53 @@ people.People = function(options, callback) {
       snippet.password = self.hashPassword(_password);
     }
 
-    snippet.email = self._apos.sanitizeString(data.email);
-    snippet.phone = self._apos.sanitizeString(data.phone);
+    return callback(null);
+  };
 
-    if (snippet.username !== oldUsername) {
-      return self.usernameUnique(snippet.username, function(err, username) {
-        if (err) {
-          return callback(err);
+  // Make sure the email address and username are unique. (This is not
+  // proof against race conditions but these will be very rare and do not
+  // affect existing users, just two newcomers signing up at the same
+  // millisecond.) TODO: think harder about accommodating unique indexes
+  // in a collection of heterogenous documents like people, pages, blog posts etc.
+
+  self.beforePutOne = function(req, slug, options, snippet, callback) {
+    return async.series({
+      uniqueEmail: function(callback) {
+        if (!snippet.email) {
+          // Email is sparsely unique - it's OK to have no email address
+          // at all, but if you have one it must be unique
+          return callback(null);
         }
-        snippet.username = username;
-        return callback(null);
-      });
-    } else {
-      return callback(null);
-    }
+        return self._apos.pages.findOne({
+          type: self._instance,
+          email: snippet.email,
+          _id: { $ne: snippet._id }
+        }, function(err, existing) {
+          if (err) {
+            return callback(err);
+          }
+          if (existing) {
+            return callback('duplicateEmail');
+          }
+          return callback(null);
+        });
+      },
+      uniqueUsername: function(callback) {
+        return self._apos.pages.findOne({
+          type: self._instance,
+          username: snippet.username,
+          _id: { $ne: snippet._id }
+        }, function(err, existing) {
+          if (err) {
+            return callback(err);
+          }
+          if (existing) {
+            return callback('duplicateUsername');
+          }
+          return callback(null);
+        });
+      }
+    }, callback);
   };
 
   // Hash a password for storage in mongodb.
@@ -560,7 +724,6 @@ people.People = function(options, callback) {
   // With a newly generated salt.
 
   self.hashPassword = function(password) {
-    console.log(password)
     return self._apos.hashPassword(password);
   };
 
@@ -652,6 +815,85 @@ people.People = function(options, callback) {
     }
     return superImportCreateItem(req, data, callback);
   };
+
+  // Send email "to" the specified person, which should be an apostrophe-people
+  // person or an object with "title" (full name) and "email" properties.
+  // If "template" is resetRequestEmail, then the templates
+  // resetRequestEmail.txt and resetRequestEmail.html will be
+  // used (both must exist). "data" is passed to the templates.
+  // Any properties appearing in "data" will also replace
+  // placeholders in "subject" formatted like so: %NAME%
+  //
+  // The hostname of the current site is always made available
+  // to the templates as "host" and to the subject line as %HOST%.
+  //
+  // Email is a thing that can go wrong. Keep an eye out for an error
+  // passed to the callback.
+  //
+  // Any properties named url or ending in Url are automatically made
+  // absolute URLs for you. This only works if req is a real web request
+  // as otherwise there is no way to determine the absolute URL.
+
+  self.mail = function(req, to, subject, template, data, callback) {
+    var finalData = {};
+    finalData.host = req.get('Host');
+    _.each(data, function(val, key) {
+      if ((key === 'url') || (key.match(/Url$/))) {
+        if ((val.charAt(0) === '/') && req.protocol) {
+          val = req.protocol + '://' + req.get('Host') + val;
+        }
+      }
+      finalData[key] = val;
+    });
+    _.each(finalData, function(val, key) {
+      subject = subject.replace('%' + key.toUpperCase() + '%', val);
+    });
+    var options = self.options.email || {};
+    _.defaults(options, {
+      // transport and transportOptions are ignored if self.options.mailer
+      // has been passed when constructing the module, as apostrophe-site will
+      // always do
+      transport: 'sendmail',
+      transportOptions: {}
+    });
+    if (!self._mailer) {
+      if (self.options.mailer) {
+        // This will always work with apostrophe-site
+        self._mailer = self.options.mailer;
+      } else {
+        // An alternative for those not using apostrophe-site
+        self._mailer = nodemailer.createTransport(options.transport, options.transportOptions);
+      }
+    }
+    return self._mailer.sendMail({
+      from: options.from || 'Password Reset <donotreply@example.com>',
+      to: to.title.replace(/[<\>]/g, '') + ' <' + to.email + '>',
+      subject: subject,
+      text: self.render(template + '.txt', finalData),
+      html: self.render(template + '.html', finalData)
+    }, callback);
+  };
+
+  if (self.manager) {
+    var superPushAllAssets = self.pushAllAssets;
+    self.pushAllAssets = function() {
+      superPushAllAssets();
+      if (options.apply) {
+        // Construct our browser side object
+        var browserOptions = options.browser || {};
+
+        // The option can't be .constructor because that has a special meaning
+        // in a javascript object (not the one you'd expect, either) http://stackoverflow.com/questions/4012998/what-it-the-significance-of-the-javascript-constructor-property
+        var browser = {
+          construct: browserOptions.construct || 'AposPeopleApply'
+        };
+
+        self._apos.pushGlobalCallWhen('always', 'window.aposPeopleApply = new @(?)', browser.construct, { action: self._action });
+        self.pushAsset('script', 'apply', { when: 'always' });
+        self.pushAsset('template', 'loginOrApply', { when: 'always' });
+      }
+    };
+  }
 
   if (callback) {
     // Invoke callback on next tick so that the people object

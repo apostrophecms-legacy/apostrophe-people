@@ -1,0 +1,21 @@
+{% include 'snippetMacros.html' %}
+<div class="apos-modal apos-template apos-person-apply">
+  <h3>Sign Up For An Account</h3>
+  {% block topButtons %}
+  {% endblock %}
+  <div class="apos-modal-body">
+    <form>
+      {{ snippetAllFields(fields, { to: 'password' }) }}
+      {% block afterPassword %}
+        <div class="apos-suggested-password" data-suggested-password>Your suggested password is: <span data-suggestion class="apos-suggestion">js populates me</span></div>
+      {% endblock %}
+      {{ snippetAllFields(fields, { after: 'password' }) }}
+    </form>
+  </div>
+  <div class="apos-modal-footer">
+    <div class="apos-modal-footer-buttons">
+      <a href="#" data-action="dismiss" class="apos-control apos-button apos-cancel">Cancel</a>
+      <a href="#" class="apos-control apos-button apos-save">Sign Up</a>
+    </div>
+  </div>
+</div>

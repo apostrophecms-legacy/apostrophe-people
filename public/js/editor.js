@@ -11,57 +11,9 @@ function AposPeople(optionsArg) {
 
   self.afterPopulatingEditor = function($el, snippet, callback) {
 
-    // Custom behaviors to conveniently set full name and title
-
-    var usernameFocused = false;
-
-    var $firstName = $el.findByName('firstName');
-    var $lastName = $el.findByName('lastName');
-
-    $firstName.change(updateName);
-    $lastName.change(updateName);
-    $firstName.change(updateUsername);
-    $lastName.change(updateUsername);
-
-    // Suggest full name if none yet or it doesn't have both first and last yet
-    function updateName() {
-      var $name = $el.findByName('title');
-      if ($name.val().indexOf(' ') === -1) {
-        $name.val(($firstName.val() + ' ' + $lastName.val()).replace(/ +$/, ''));
-      }
-      return true;
-    }
-
-    // Keep updating the username suggestion until they focus that field.
-    // Of course we don't mess with existing usernames.
-    function updateUsername() {
-      var $username = $el.findByName('username');
-      if ((!usernameFocused) && (snippet.username === undefined)) {
-        var username = apos.slugify($firstName.val() + $lastName.val());
-        $.post(self._action + '/username-unique', { username: username }, function(data) {
-          $username.val(data.username);
-        });
-      }
-      $username.on('focus', function() {
-        usernameFocused = true;
-      });
-    }
-
-    // Generate a recommended, strong password for any new user
-    function recommendPassword() {
-      var $suggestedPassword = $el.find('[data-suggested-password]');
-      var $password = $el.findByName('password');
-
-      $.post(self._action + '/generate-password', {}, function(data) {
-        $suggestedPassword.find('[data-suggestion]').text(data.password);
-        $suggestedPassword.show();
-        $password.val(data.password);
-      });
-    }
-
-    if (snippet.username === undefined) {
-      recommendPassword();
-    }
+    self.suggestName($el, snippet);
+    self.suggestUsername($el, snippet);
+    self.suggestPassword($el, snippet);
 
     // Read-only display of group memberships and titles. TODO:
     // allow this to be edited from the person's side. Even more
@@ -85,11 +37,84 @@ function AposPeople(optionsArg) {
       } else {
         $group.find('[data-job-title]').remove();
       }
-      apos.log($group[0]);
       $el.find('[data-groups]').append($group);
     });
 
     callback();
+  };
+
+  // Conveniently suggest full name when appropriate. Used both here
+  // and in apply.js
+
+  self.suggestName = function($el, snippet) {
+    var $firstName = $el.findByName('firstName');
+    var $lastName = $el.findByName('lastName');
+
+    $firstName.change(updateName);
+    $lastName.change(updateName);
+
+    // Suggest full name if none yet or it doesn't have both first and last yet
+    function updateName() {
+      var $name = $el.findByName('title');
+      if ($name.val().indexOf(' ') === -1) {
+        $name.val(($firstName.val() + ' ' + $lastName.val()).replace(/ +$/, ''));
+      }
+      return true;
+    }
+  };
+
+  // Suggest username when appropriate. Used both here and in apply.js
+
+  self.suggestUsername = function($el, snippet) {
+    var $firstName = $el.findByName('firstName');
+    var $lastName = $el.findByName('lastName');
+
+    var usernameFocused = false;
+
+    $firstName.change(updateUsername);
+    $lastName.change(updateUsername);
+
+    // Keep updating the username suggestion until they focus that field.
+    // Of course we don't mess with existing usernames.
+    function updateUsername() {
+      var $username = $el.findByName('username');
+      if ((!usernameFocused) && (snippet.username === undefined)) {
+        var username = apos.slugify($firstName.val() + $lastName.val());
+        $.post(self._action + '/username-unique', { username: username }, function(data) {
+          $username.val(data.username);
+        });
+      }
+      $username.on('focus', function() {
+        usernameFocused = true;
+      });
+    }
+  };
+
+  // Generate a recommended, strong password for any new user. If your
+  // $el has no element with a data-suggested-password attribute, then
+  // this method does nothing. That allows designers who don't feel
+  // the suggested passwords are useful to skip that feature. If such
+  // an element does exist, a further element within it with a
+  // data-suggestion attribute is looked for, and its text is set to
+  // the suggested password.
+
+  self.suggestPassword = function($el, snippet) {
+    function recommendPassword() {
+      var $suggestedPassword = $el.find('[data-suggested-password]');
+      if ($suggestedPassword.length) {
+        var $password = $el.findByName('password');
+
+        $.post(self._action + '/generate-password', {}, function(data) {
+          $suggestedPassword.find('[data-suggestion]').text(data.password);
+          $suggestedPassword.show();
+          $password.val(data.password);
+        });
+      }
+    }
+
+    if (snippet.username === undefined) {
+      recommendPassword();
+    }
   };
 
   self.addingToManager = function($el, $snippet, snippet) {
