@@ -77,11 +77,11 @@ Users may reset their password via email confirmation, as long as they have a va
 
 However for those emails to be delivered you will need to set a valid "from" address when configuring the people module. Its options must include:
 
-{
-  email: {
-    from: "Some Person <someone@somewhere.com>"
-  }
-}
+    {
+      email: {
+        from: "Some Person <someone@somewhere.com>"
+      }
+    }
 
 There is a default "from" address but sendmail will complain that it is not valid and users will see an error. So make sure you configure that.
 
@@ -105,11 +105,92 @@ The above fields are required and the user will not be permitted to complete the
 
 The `apply.html` template is used to present the application form.
 
-#### Group Membership For New Accounts
+#### Triggering the Application Form
 
-Persons who have just confirmed their accounts are added to a group called `Guests`, which is created if it does not exist; if this group is created on the fly it is given the `guest` permission.
+You can trigger the application form by giving any link a
+`data-people-apply` attribute. You can place those wherever it makes
+sense in your application:
 
-If this does not suit your purposes, set the `applyGroup` option to an explicit group name, or to `false` if no group membership is desired. You may also set `applyGroupPermissions` to an array of permissions to be given to that group if it does not already exist. This array may be empty.
+    <a href="#" data-people-apply>Sign Up For An Account</a>
+
+By default the user is required to confirm their account by clicking
+on a link in an email generated when they complete the form.
+
+### Account Confirmation
+
+Confirmation emails are generated via the `applyEmail.html` and `applyEmail.txt` templates. The subject lines can be overridden via the `applySubject` option.
+
+If you don't mind a higher rate of spam accounts, you may opt out of
+email confirmation with:
+
+    applyConfirm: false
+
+### Permissions for New Accounts
+
+When users create accounts, by default they are added to a group
+called "Guests" with the single permission "guest". This account is
+created if it does not yet exist. If it does already exist, its
+permissions are left as-is.
+
+You may change the group name:
+
+    applyGroup: guitarists
+
+Or the group's permissions:
+
+    applyGroupPermissions: [ 'guest', 'submit-event', 'submit-blog-post' ]
+
+### Fine-Grained Permissions For Events, Blog Posts and Other Types
+
+Fine-grained permissions are now available on a per-group basis for
+events, blog posts and so on; in fact, any new snippet instance type
+you define will automatically have three permissions available to be
+assigned to groups:
+
+`submit-blog-post`: can submit a blog post but cannot mark it published
+`edit-blog-post`: can submit blog posts and publish them, but not edit
+other people's
+`admin-blog-post`: can edit, publish and remove any blog post
+
+This is very helpful to cut down on confusion that stems from giving
+too many people the admin permission.
+
+The "edit" permission implies all "edit-*" permissions, and the
+"admin" permission implies all "admin-*" permissions.
+
+### Requiring Users To Log In *Or* Sign In
+
+You can also set up links that give the user a choice between creating
+an account and logging into an existing account. And you can set a URL
+to be accessed when the user has finished logging in, one way or the
+other, via the data-after-login attribute:
+
+    <a href="#" data-people-login-or-apply data-after-login="/">Log in
+first, then go home</a>
+
+### Triggering Button Clicks After The User Logs In
+
+Of course, sometimes what you really want is to force the user to log
+in or sign up, then trigger something that would normally be accessed
+by just clicking a button on a particular page.
+
+So we've added a way to trigger a click event on an element in a page
+after loading it. (This is actually a core Apostrophe module feature but it has special relevance here.)
+
+Just end any URL with this:
+
+    #click-my-button
+
+And Apostrophe will look for an element with a `data-my-button`
+attribute and trigger a click event on it after loading the relevant page with an extra URL component to prevent caching.
+
+*my-button is just an example. Use your own attribute name.*
+
+Apostrophe will also scroll to ensure that element is visible.
+
+This feature works well with the "data-after-login" attribute shown above.
+
+### Using Account Signups With apostrophe-moderator
 
 You may want to mix this feature with the [apostrophe-moderator](http://github.com/punkave/apostrophe-moderator) module, which allows for easy management of user-submitted content. If so, make sure you add the appropriate permissions for the types that will support moderation, like this:
 
@@ -118,10 +199,4 @@ You may want to mix this feature with the [apostrophe-moderator](http://github.c
 Note the use of hyphenated names.
 
 Now users who create accounts via the online application process will be able to immediately begin submitting and editing their own content, but will *not* be able to mark it as "published," and if you use the moderator module there will be an easy way for admins to filter and view the submitted content.
-
-#### Account Confirmation
-
-By default, people who apply for accounts must confirm by clicking a link delivered by email as soon as they submit their application. If you wish you can disable this behavior by setting the `confirm` option to `false`. Be aware that this can lead to a much higher rate of spam accounts.
-
-If you do not set `confirm` to `false`, an email is sent with the text found in the `confirmEmail.html` and `confirmEmail.txt` templates, which you may override at project level in your `lib/modules/apostrophe-people/views` folder.
 
