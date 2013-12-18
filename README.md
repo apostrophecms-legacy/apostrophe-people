@@ -111,6 +111,14 @@ Persons who have just confirmed their accounts are added to a group called `Gues
 
 If this does not suit your purposes, set the `applyGroup` option to an explicit group name, or to `false` if no group membership is desired. You may also set `applyGroupPermissions` to an array of permissions to be given to that group if it does not already exist. This array may be empty.
 
+You may want to mix this feature with the [apostrophe-moderator](http://github.com/punkave/apostrophe-moderator) module, which allows for easy management of user-submitted content. If so, make sure you add the appropriate permissions for the types that will support moderation, like this:
+
+    applyGroupPermissions: [ 'guest', 'submit-event', 'submit-blog-post' ]
+
+Note the use of hyphenated names.
+
+Now users who create accounts via the online application process will be able to immediately begin submitting and editing their own content, but will *not* be able to mark it as "published," and if you use the moderator module there will be an easy way for admins to filter and view the submitted content.
+
 #### Account Confirmation
 
 By default, people who apply for accounts must confirm by clicking a link delivered by email as soon as they submit their application. If you wish you can disable this behavior by setting the `confirm` option to `false`. Be aware that this can lead to a much higher rate of spam accounts.
