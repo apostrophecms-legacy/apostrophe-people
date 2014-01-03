@@ -278,7 +278,7 @@ people.People = function(options, callback) {
           }, callback);
         },
         send: function(callback) {
-          return self.mail(req, to, self.options.resetSubject || 'Your request to reset your password on %HOST%', 'resetRequestEmail', { url: self._action + '/reset' }, function(err) {
+          return self.mail(req, person, self.options.resetSubject || 'Your request to reset your password on %HOST%', 'resetRequestEmail', { url: self._action + '/reset' }, function(err) {
             if (err) {
               return callback(err);
             }
