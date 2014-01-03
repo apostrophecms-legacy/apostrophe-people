@@ -789,19 +789,6 @@ people.People = function(options, callback) {
     }
   };
 
-  // Use a permissions event handler to put the kibosh on
-  // any editing of people by non-admins for now. Later we'll have
-  // ways to do that safely without access to the login checkbox
-  // in certain situations
-
-  self._apos.on('permissions', function(req, action, result) {
-    if (action.match(/\-people$/) && (action !== 'view-people')) {
-      if (!(req.user && req.user.permissions.admin)) {
-        result.response = 'Forbidden';
-      }
-    }
-  });
-
   var superDispatch = self.dispatch;
   self.dispatch = function(req, callback) {
     console.log('DEPRECATED: the people module should no longer be used to create staff directory pages. Instead use the groups module which is designed to serve up directories using data from both people and groups.');
