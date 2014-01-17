@@ -74,6 +74,8 @@ function AposPeople(optionsArg) {
     $firstName.change(updateUsername);
     $lastName.change(updateUsername);
 
+    var $username = $el.findByName('username');
+
     // Keep updating the username suggestion until they focus that field.
     // Of course we don't mess with existing usernames.
     function updateUsername() {

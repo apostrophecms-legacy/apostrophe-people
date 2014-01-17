@@ -107,7 +107,8 @@ people.People = function(options, callback) {
     {
       name: 'username',
       label: 'Username',
-      type: 'string'
+      type: 'string',
+      autocomplete: false
     },
     {
       name: 'password',
@@ -699,6 +700,12 @@ people.People = function(options, callback) {
         });
       },
       uniqueUsername: function(callback) {
+        if (!snippet.username) {
+          // People are allowed to have no username at all, but
+          // canonicalize it to not being present as a property at all
+          delete snippet.username;
+          return callback(null);
+        }
         return self._apos.pages.findOne({
           type: self._instance,
           username: snippet.username,
