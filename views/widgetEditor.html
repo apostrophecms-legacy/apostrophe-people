@@ -20,8 +20,8 @@ Or just use tags to pull in people.') }}
   <label>{{ __('By Tag') }}</label><input type="radio" name="by" value="tag" />
 </fieldset>
 
-{{ formTags('tags', __('Tags')) }}
-{{ formText('limit', __('People Shown')) }}
+{{ formTags('tags', 'Tags') }}
+{{ formText('limit', 'People Shown') }}
 
 <hr class="apos-hr" />
 
@@ -30,7 +30,7 @@ Or just use tags to pull in people.') }}
   <input type="radio" name="by" value="id" />
 </fieldset>
 
-{{ formSelective('ids', __('People')) }}
+{{ formSelective('ids', 'People') }}
 
 {% endblock %}
 
