@@ -1,18 +1,18 @@
 {% extends "loginBase.html" %}
 
-{% block subTitle %}Change Your Password{% endblock %}
-{% block subHeading %}CHANGE YOUR PASSWORD{% endblock %}
+{% block subTitle %}{{ __('Change Your Password') }}{% endblock %}
+{% block subHeading %}{{ __('CHANGE YOUR PASSWORD') }}{% endblock %}
 {% block action %}/apos-people/reset{% endblock %}
 {% block fields %}
   <input name="reset" value="{{ reset| e }}" type="hidden" />
   <div class="login-password">
-    <label>New Password</label>
+    <label>{{ __('New Password') }}</label>
     <input type="password" name="password1" />
   </div>
   <div class="login-password">
-    <label>Confirm New Password</label>
+    <label>{{ __('Confirm New Password') }}</label>
     <input type="password" name="password2" />
   </div>
 {% endblock %}
 {# Don't put any line breaks inside this block #}
-{% block buttonLabel %}Change{% endblock %}
+{% block buttonLabel %}{{ __('Change') }}{% endblock %}

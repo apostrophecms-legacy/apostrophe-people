@@ -1,13 +1,13 @@
 {% extends "loginBase.html" %}
 
-{% block subTitle %}Password Changed{% endblock %}
-{% block subHeading %}PASSWORD CHANGED{% endblock %}
+{% block subTitle %}{{ __('Password Changed') }}{% endblock %}
+{% block subHeading %}{{ __('PASSWORD CHANGED') }}{% endblock %}
 
 {% block form %}
 <p>
-  You have successfully changed your password.
+  {{ __('You have successfully changed your password.') }}
 </p>
 <p>
-  <a href="/login">Log In</a>
+  <a href="/login">{{ __('Log In') }}</a>
 </p>
 {% endblock %}

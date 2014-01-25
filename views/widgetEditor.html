@@ -6,31 +6,31 @@
 {% endblock %}
 
 {% block title %}
-  Display People
+  {{ __('Display People') }}
 {% endblock %}
 
 {% block instructions %}
-Start typing the name of a person, then click on the suggestions that appear to insert them.
-Or just use tags to pull in people.
+{{ __('Start typing the name of a person, then click on the suggestions that appear to insert them.
+Or just use tags to pull in people.') }}
 {% endblock %}
 
 {% block formBody %}
 
 <fieldset class="apos-fieldset apos-fieldset-radio">
-  <label>By Tag</label><input type="radio" name="by" value="tag" />
+  <label>{{ __('By Tag') }}</label><input type="radio" name="by" value="tag" />
 </fieldset>
 
-{{ formTags('tags', 'Tags') }}
-{{ formText('limit', 'People Shown') }}
+{{ formTags('tags', __('Tags')) }}
+{{ formText('limit', __('People Shown')) }}
 
 <hr class="apos-hr" />
 
 <fieldset class="apos-fieldset apos-fieldset-radio">
-  <label>By Name</label>
+  <label>{{ __('By Name') }}</label>
   <input type="radio" name="by" value="id" />
 </fieldset>
 
-{{ formSelective('ids', 'People') }}
+{{ formSelective('ids', __('People')) }}
 
 {% endblock %}
 
