@@ -10,6 +10,10 @@ In addition, one can create a "directory page" to display a directory of people.
 
 See the a2 sandbox for a functional example.
 
+### Code Stability
+
+0.4.x releases receive bug fixes only. For active development, follow 0.5.x releases and/or the master branch in github.
+
 ## You Also Need Groups
 
 You'll want to install both the people module and the [groups module](http://github.com/punkave/apostrophe-groups) to use this functionality successfully. Again, see the [a2 sandbox](http://github.com/punkave/apostrophe-sandbox) for a working example.
