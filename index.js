@@ -279,7 +279,9 @@ people.People = function(options, callback) {
           }, callback);
         },
         send: function(callback) {
-          return self.mail(req, person, self.options.resetSubject || 'Your request to reset your password on %HOST%', 'resetRequestEmail', { url: self._action + '/reset?reset=' + reset }, function(err) {
+          // For bc we still have support for a resetSubject option separate
+          // from .email.resetRequestEmailSubject
+          return self.email(req, person, self.options.resetSubject || 'Your request to reset your password on %HOST%', 'resetRequestEmail', { url: self._action + '/reset?reset=' + reset }, function(err) {
             if (err) {
               return callback(err);
             }
@@ -467,7 +469,9 @@ people.People = function(options, callback) {
               if (options.applyConfirm === false) {
                 return callback(null);
               }
-              return self.mail(req, user, self.options.applySubject || 'Your request to create an account on %HOST%', 'applyEmail', { url: self._action + '/confirm/' + user.applyConfirm }, function(err) {
+              // For bc we still have support for an applySubject option separate
+              // from .email.applyEmailSubject
+              return self.email(req, user, self.options.applySubject || 'Your request to create an account on {{ host }}', 'applyEmail', { url: self._action + '/confirm/' + user.applyConfirm }, function(err) {
                 if (err) {
                   // Remove the person we just inserted if we have no way
                   // of communicating their confirmation link to them
@@ -544,6 +548,10 @@ people.People = function(options, callback) {
   // Call the base class constructor. Don't pass the callback, we want to invoke it
   // ourselves after constructing more stuff
   snippets.Snippets.call(this, options, null);
+
+  self._apos.mixinModuleEmail(self);
+  // for bc
+  self.mail = self.email;
 
   self.getAutocompleteTitle = function(snippet) {
     var title = snippet.title;
@@ -808,64 +816,6 @@ people.People = function(options, callback) {
       data.title = data.firstName + ' ' + data.lastName;
     }
     return superImportCreateItem(req, data, callback);
-  };
-
-  // Send email "to" the specified person, which should be an apostrophe-people
-  // person or an object with "title" (full name) and "email" properties.
-  // If "template" is resetRequestEmail, then the templates
-  // resetRequestEmail.txt and resetRequestEmail.html will be
-  // used (both must exist). "data" is passed to the templates.
-  // Any properties appearing in "data" will also replace
-  // placeholders in "subject" formatted like so: %NAME%
-  //
-  // The hostname of the current site is always made available
-  // to the templates as "host" and to the subject line as %HOST%.
-  //
-  // Email is a thing that can go wrong. Keep an eye out for an error
-  // passed to the callback.
-  //
-  // Any properties named url or ending in Url are automatically made
-  // absolute URLs for you. This only works if req is a real web request
-  // as otherwise there is no way to determine the absolute URL.
-
-  self.mail = function(req, to, subject, template, data, callback) {
-    var finalData = {};
-    finalData.host = req.get('Host');
-    _.each(data, function(val, key) {
-      if ((key === 'url') || (key.match(/Url$/))) {
-        if ((val.charAt(0) === '/') && req.protocol) {
-          val = req.protocol + '://' + req.get('Host') + val;
-        }
-      }
-      finalData[key] = val;
-    });
-    _.each(finalData, function(val, key) {
-      subject = subject.replace('%' + key.toUpperCase() + '%', val);
-    });
-    var options = self.options.email || {};
-    _.defaults(options, {
-      // transport and transportOptions are ignored if self.options.mailer
-      // has been passed when constructing the module, as apostrophe-site will
-      // always do
-      transport: 'sendmail',
-      transportOptions: {}
-    });
-    if (!self._mailer) {
-      if (self.options.mailer) {
-        // This will always work with apostrophe-site
-        self._mailer = self.options.mailer;
-      } else {
-        // An alternative for those not using apostrophe-site
-        self._mailer = nodemailer.createTransport(options.transport, options.transportOptions);
-      }
-    }
-    return self._mailer.sendMail({
-      from: options.from || 'Password Reset <donotreply@example.com>',
-      to: to.title.replace(/[<\>]/g, '') + ' <' + to.email + '>',
-      subject: subject,
-      text: self.render(template + '.txt', finalData),
-      html: self.render(template + '.html', finalData)
-    }, callback);
   };
 
   if (self.manager) {
