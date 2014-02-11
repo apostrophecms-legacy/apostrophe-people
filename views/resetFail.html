@@ -1,11 +1,11 @@
 {% extends "loginBase.html" %}
 
-{% block subTitle %}Link is Incorrect{% endblock %}
-{% block subHeading %}LINK IS INCORRECT{% endblock %}
+{% block subTitle %}{{ __('Link is Incorrect') }}{% endblock %}
+{% block subHeading %}{{ __('LINK IS INCORRECT') }}{% endblock %}
 
 {% block form %}
-<div class="warning">Invalid link</div>
-<p>You may have copied and pasted the link incorrectly, or it may have been used already. Please try again or contact the administrator.</p>
-<p><a href="/reset-request">Request a New Password Reset Link</a></p>
+<div class="warning">{{ __('Invalid link') }}</div>
+{{ __('<p>You may have copied and pasted the link incorrectly, or it may have been used already. Please try again or contact the administrator.</p>
+<p><a href="/reset-request">Request a New Password Reset Link</a></p>') }}
 </div>
 {% endblock %}

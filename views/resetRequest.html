@@ -1,12 +1,12 @@
 {% extends "loginBase.html" %}
 
-{% block subTitle %}Request to Change Your Password{% endblock %}
-{% block subHeading %}REQUEST TO CHANGE YOUR PASSWORD{% endblock %}
+{% block subTitle %}{{ __('Request to Change Your Password') }}{% endblock %}
+{% block subHeading %}{{ __('REQUEST TO CHANGE YOUR PASSWORD') }}{% endblock %}
 {% block action %}/apos-people/reset-request{% endblock %}
 {% block fields %}
   <div class="login-username">
-    <p>Please enter your username or email address. Then click "Send."</p>
-    <label>Username<br />or Email</label>
+    <p>{{ __('Please enter your username or email address. Then click "Send."') }}</p>
+    <label>{{ __('Username<br />or Email') }}</label>
     <input type="text" name="username" />
   </div>
 {% endblock %}

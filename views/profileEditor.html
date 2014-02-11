@@ -1,6 +1,6 @@
 {% include 'snippetMacros.html' %}
 <div class="apos-modal apos-template apos-person-profile">
-  <h3>My Profile</h3>
+  <h3>{{ __('My Profile') }}</h3>
   {% block topButtons %}
   {% endblock %}
   <div class="apos-modal-body">
@@ -10,8 +10,8 @@
   </div>
   <div class="apos-modal-footer">
     <div class="apos-modal-footer-buttons">
-      <a href="#" data-action="dismiss" class="apos-control apos-button apos-cancel">Cancel</a>
-      <a href="#" class="apos-control apos-button apos-save">Save Changes</a>
+      <a href="#" data-action="dismiss" class="apos-control apos-button apos-cancel">{{ __('Cancel') }}</a>
+      <a href="#" class="apos-control apos-button apos-save">{{ __('Save Changes') }}</a>
     </div>
   </div>
 </div>
