@@ -1,6 +1,6 @@
 {
   "name": "apostrophe-people",
-  "version": "0.0.38",
+  "version": "0.5.1",
   "description": "Staff directories, user accounts and personal profiles for the Apostrophe content management system",
   "main": "index.js",
   "scripts": {
@@ -27,7 +27,7 @@
     "extend": "~1.1.x",
     "moment": "~2.0.x",
     "password-hash": "~1.2.1",
-    "apostrophe-snippets": "~0.0.x",
+    "apostrophe-snippets": "~0.5.x",
     "xkcd-pwgen": "0.0.1",
     "nodemailer": "~0.5.6"
   },
