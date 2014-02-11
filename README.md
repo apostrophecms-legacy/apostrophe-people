@@ -81,11 +81,13 @@ Users may reset their password via email confirmation, as long as they have a va
 
 However for those emails to be delivered you will need to set a valid "from" address when configuring the people module. Its options must include:
 
+```javascript
     {
       email: {
         from: "Some Person <someone@somewhere.com>"
       }
     }
+```
 
 There is a default "from" address but sendmail will complain that it is not valid and users will see an error. So make sure you configure that.
 
@@ -101,9 +103,9 @@ People may apply for accounts with login privileges if you set the `apply` optio
 
 The `applyFields` option determines the fields that people are invited to fill out when they apply for an account. The following list is the default, and you should specify at least these fields. You may specify additional fields that exist in your schema (see `addFields`).
 
-'''javascript
+```javascript
 [ 'username', 'password', 'firstName', 'lastName', 'title', 'email' ]
-'''
+```
 
 The above fields are required and the user will not be permitted to complete the application form without supplying them.
 
