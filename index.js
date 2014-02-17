@@ -232,7 +232,7 @@ people.People = function(options, callback) {
     });
 
     self._app.get(self._action + '/reset-request', function(req, res) {
-      return res.send(self.renderPage('resetRequest', {}, 'anon'));
+      return res.send(self.renderPage(req, 'resetRequest', {}));
     });
 
     self._app.post(self._action + '/reset-request', function(req, res) {
@@ -290,7 +290,7 @@ people.People = function(options, callback) {
           });
         }
       }, function(err) {
-        return res.send(self.renderPage(done ? 'resetRequestSent' : 'resetRequest', { message: err }, 'anon'));
+        return res.send(self.renderPage(req, done ? 'resetRequestSent' : 'resetRequest', { message: err }));
       });
     });
 
@@ -346,7 +346,7 @@ people.People = function(options, callback) {
           });
         }
       }, function(err) {
-        return res.send(self.renderPage(template, { message: err, reset: reset }, 'anon'));
+        return res.send(self.renderPage(req, template, { message: err, reset: reset }));
       });
     });
 
@@ -517,7 +517,7 @@ people.People = function(options, callback) {
                   return res.send({ status: 'error' });
                 } else {
                   delete user.password;
-                  self._pages.prunePage(user);
+                  self._apos.prunePage(user);
                   return res.send({ status: 'ok', confirmed: true, user: user });
                 }
               });
@@ -555,7 +555,7 @@ people.People = function(options, callback) {
             });
           },
         }, function(err) {
-          return res.send(self.renderPage(err ? err : 'confirmed', { message: err, reset: reset }, 'anon'));
+          return res.send(self.renderPage(req, err ? err : 'confirmed', { message: err, reset: reset }));
         });
       });
     }
