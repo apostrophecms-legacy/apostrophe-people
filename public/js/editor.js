@@ -166,16 +166,3 @@ function AposPeople(optionsArg) {
   }
 }
 
-AposPeople.addWidgetType = function(options) {
-  if (!options) {
-    options = {};
-  }
-  _.defaults(options, {
-    name: 'people',
-    label: 'People',
-    action: '/apos-people',
-    defaultLimit: 5
-  });
-  AposSnippets.addWidgetType(options);
-};
-
