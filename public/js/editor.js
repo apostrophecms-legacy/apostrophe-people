@@ -11,6 +11,12 @@ function AposPeople(optionsArg) {
 
   self.afterPopulatingEditor = function($el, snippet, callback) {
 
+    // Quick and dirty fix to hide the copy function as copying people won't
+    // work to anybody's satisfaction. Would be nice if it wasn't there in
+    // the first place. (There is no security issue with not disabling it fully
+    // as only admins can edit people in the first place.)
+    $el.find('[data-action="copy"]').remove();
+
     self.suggestName($el, snippet);
     self.suggestUsername($el, snippet);
     self.suggestPassword($el, snippet);
