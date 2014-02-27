@@ -527,7 +527,7 @@ people.People = function(options, callback) {
             res.send({ status: status });
           });
         } else {
-          var piece = self.getGroupsManager().newInstance();
+          var piece = self.newInstance();
           return res.send({ status: 'ok', fields: schemaSubset, piece: piece, template: self.render('apply', { fields: schemaSubset }) });
         }
       });
