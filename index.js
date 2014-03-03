@@ -369,20 +369,14 @@ people.People = function(options, callback) {
 
         // Copy only what we deem appropriate to the object that goes
         // over the wire
-        var snippet = {
-          areas: {}
-        };
+        var snippet = {};
         _.each(schemaSubset, function(field) {
           // TODO: one of the many places we can get rid of this dumb distinction in
           // storage location by type in the 0.5 series
-          if ((field.type === 'area') || (field.type === 'singleton')) {
-            snippet.areas[field.name] = _snippet.areas[field.name];
-          } else {
-            snippet[field.name] = _snippet[field.name];
-          }
+          snippet[field.name] = _snippet[field.name];
         });
         if (req.method === 'POST') {
-          var set = { areas: {} };
+          var set = {};
           self.convertSomeFields(schemaSubset, 'form', req.body, set);
           var user;
           // We can't just do an update query because we want
@@ -433,7 +427,7 @@ people.People = function(options, callback) {
         });
         var group;
         if (req.method === 'POST') {
-          var user = { applicant: true, applied: new Date(), areas: {} };
+          var user = { applicant: true, applied: new Date() };
           self.convertSomeFields(schemaSubset, 'form', req.body, user);
           return async.series({
             ensureGroup: function(callback) {
