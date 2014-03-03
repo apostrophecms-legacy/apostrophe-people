@@ -232,7 +232,7 @@ people.People = function(options, callback) {
     });
 
     self._app.get(self._action + '/reset-request', function(req, res) {
-      return res.send(self.renderPage(req, res, 'resetRequest', {}));
+      return res.send(self.renderPage(req, 'resetRequest', {}));
     });
 
     self._app.post(self._action + '/reset-request', function(req, res) {
@@ -282,7 +282,7 @@ people.People = function(options, callback) {
         send: function(callback) {
           // For bc we still have support for a resetSubject option separate
           // from .email.resetRequestEmailSubject
-          return self.email(req, res, person, self.options.resetSubject || __('Your request to reset your password on %HOST%'), 'resetRequestEmail', { url: self._action + '/reset?reset=' + reset }, function(err) {
+          return self.email(req, person, self.options.resetSubject || __('Your request to reset your password on %HOST%'), 'resetRequestEmail', { url: self._action + '/reset?reset=' + reset }, function(err) {
             if (err) {
               return callback(err);
             }
@@ -291,7 +291,7 @@ people.People = function(options, callback) {
           });
         }
       }, function(err) {
-        return res.send(self.renderPage(req, res, done ? 'resetRequestSent' : 'resetRequest', { message: err }));
+        return res.send(self.renderPage(req, done ? 'resetRequestSent' : 'resetRequest', { message: err }));
       });
     });
 
@@ -347,7 +347,7 @@ people.People = function(options, callback) {
           });
         }
       }, function(err) {
-        return res.send(self.renderPage(req, res, template, { message: err, reset: reset }));
+        return res.send(self.renderPage(req, template, { message: err, reset: reset }));
       });
     });
 
@@ -556,7 +556,7 @@ people.People = function(options, callback) {
             });
           },
         }, function(err) {
-          return res.send(self.renderPage(req, res, err ? err : 'confirmed', { message: err, reset: reset }));
+          return res.send(self.renderPage(req, err ? err : 'confirmed', { message: err, reset: reset }));
         });
       });
     }
