@@ -232,7 +232,7 @@ people.People = function(options, callback) {
     });
 
     self._app.get(self._action + '/reset-request', function(req, res) {
-      return res.send(self.renderPage('resetRequest', {}, 'anon'));
+      return res.send(self.renderPage(req, 'resetRequest', {}));
     });
 
     self._app.post(self._action + '/reset-request', function(req, res) {
@@ -290,7 +290,7 @@ people.People = function(options, callback) {
           });
         }
       }, function(err) {
-        return res.send(self.renderPage(done ? 'resetRequestSent' : 'resetRequest', { message: err }, 'anon'));
+        return res.send(self.renderPage(req, done ? 'resetRequestSent' : 'resetRequest', { message: err }));
       });
     });
 
@@ -346,7 +346,7 @@ people.People = function(options, callback) {
           });
         }
       }, function(err) {
-        return res.send(self.renderPage(template, { message: err, reset: reset }, 'anon'));
+        return res.send(self.renderPage(req, template, { message: err, reset: reset }));
       });
     });
 
@@ -357,46 +357,62 @@ people.People = function(options, callback) {
       var schemaSubset = _.filter(self.schema, function(field) {
         return _.contains(options.profileFields, field.name);
       });
-      var snippet = { areas: {} };
 
-      _.each(schemaSubset, function(field) {
-        if ((field.type === 'area') || (field.type === 'singleton')) {
-          snippet.areas[field.name] = req.user.areas[field.name];
+      // Get the entire user object. req.user does not contain joins for
+      // performance reasons
+      return self.getOne(req, { _id: req.user._id }, { permissions: false }, function(err, _snippet) {
+        if (err) {
+          return res.send({ status: err ? 'error' : 'ok' });
+        }
+        // Never allow this to go over the wire, even hashed it's terrible to do that
+        delete _snippet.password;
+
+        // Copy only what we deem appropriate to the object that goes
+        // over the wire
+        var snippet = {
+          areas: {}
+        };
+        _.each(schemaSubset, function(field) {
+          // TODO: one of the many places we can get rid of this dumb distinction in
+          // storage location by type in the 0.5 series
+          if ((field.type === 'area') || (field.type === 'singleton')) {
+            snippet.areas[field.name] = _snippet.areas[field.name];
+          } else {
+            snippet[field.name] = _snippet[field.name];
+          }
+        });
+        if (req.method === 'POST') {
+          var set = { areas: {} };
+          self.convertSomeFields(schemaSubset, 'form', req.body, set);
+          var user;
+          // We can't just do an update query because we want
+          // overrides of putOne to be respected. Get the user again,
+          // via getPage, so that no joins or excessive cleverness like
+          // deletion of the password field come into play.
+          return async.series({
+            get: function(callback) {
+              return self._apos.getPage(req, req.user.slug, { permissions: false }, function(err, snippet) {
+                if (err) {
+                  return callback(err);
+                }
+                if (!snippet) {
+                  return callback('notfound');
+                }
+                user = snippet;
+                return callback(null);
+              });
+            },
+            put: function(callback) {
+              extend(true, user, set);
+              return self.putOne(req, req.user.slug, { permissions: false }, user, callback);
+            }
+          }, function(err) {
+            res.send({ status: err ? 'error' : 'ok' });
+          });
         } else {
-          snippet[field.name] = req.user[field.name];
+          return res.send({ status: 'ok', profile: snippet, fields: schemaSubset, template: self.render('profileEditor', { fields: schemaSubset }) });
         }
       });
-      if (req.method === 'POST') {
-        var set = { areas: {} };
-        self.convertSomeFields(schemaSubset, 'form', req.body, set);
-        var user;
-        // We can't just do an update query because we want
-        // overrides of putOne to be respected. Get the user again,
-        // via getPage, so that no joins or excessive cleverness like
-        // deletion of the password field come into play.
-        return async.series({
-          get: function(callback) {
-            return self._apos.getPage(req, req.user.slug, { permissions: false }, function(err, snippet) {
-              if (err) {
-                return callback(err);
-              }
-              if (!snippet) {
-                return callback('notfound');
-              }
-              user = snippet;
-              return callback(null);
-            });
-          },
-          put: function(callback) {
-            extend(true, user, set);
-            return self.putOne(req, req.user.slug, { permissions: false }, user, callback);
-          }
-        }, function(err) {
-          res.send({ status: err ? 'error' : 'ok' });
-        });
-      } else {
-        return res.send({ status: 'ok', profile: snippet, fields: schemaSubset, template: self.render('profileEditor', { fields: schemaSubset }) });
-      }
     });
 
     if (options.apply) {
@@ -501,7 +517,7 @@ people.People = function(options, callback) {
                   return res.send({ status: 'error' });
                 } else {
                   delete user.password;
-                  self._pages.prunePage(user);
+                  self._apos.prunePage(user);
                   return res.send({ status: 'ok', confirmed: true, user: user });
                 }
               });
@@ -511,7 +527,7 @@ people.People = function(options, callback) {
             res.send({ status: status });
           });
         } else {
-          var piece = self.getGroupsManager().newInstance();
+          var piece = self.newInstance();
           return res.send({ status: 'ok', fields: schemaSubset, piece: piece, template: self.render('apply', { fields: schemaSubset }) });
         }
       });
@@ -539,7 +555,7 @@ people.People = function(options, callback) {
             });
           },
         }, function(err) {
-          return res.send(self.renderPage(err ? err : 'confirmed', { message: err, reset: reset }, 'anon'));
+          return res.send(self.renderPage(req, err ? err : 'confirmed', { message: err, reset: reset }));
         });
       });
     }
