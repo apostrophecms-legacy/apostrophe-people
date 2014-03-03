@@ -232,10 +232,11 @@ people.People = function(options, callback) {
     });
 
     self._app.get(self._action + '/reset-request', function(req, res) {
-      return res.send(self.renderPage(req, 'resetRequest', {}));
+      return res.send(self.renderPage(req, res, 'resetRequest', {}));
     });
 
     self._app.post(self._action + '/reset-request', function(req, res) {
+      var __ = res.__;
       var login;
       var person;
       var reset;
@@ -244,7 +245,7 @@ people.People = function(options, callback) {
         validate: function(callback) {
           login = self._apos.sanitizeString(req.body.username);
           if (!login) {
-            return callback('A response is required.');
+            return callback(__('A response is required.'));
           }
           return callback(null);
         },
@@ -259,7 +260,7 @@ people.People = function(options, callback) {
               return callback(err);
             }
             if (!page) {
-              return callback('No user with that username or email address was found, or there is no email address associated with your account. Please try again or contact your administrator.');
+              return callback(__('No user with that username or email address was found, or there is no email address associated with your account. Please try again or contact your administrator.'));
             }
             person = page;
             return callback(null);
@@ -281,7 +282,7 @@ people.People = function(options, callback) {
         send: function(callback) {
           // For bc we still have support for a resetSubject option separate
           // from .email.resetRequestEmailSubject
-          return self.email(req, person, self.options.resetSubject || 'Your request to reset your password on %HOST%', 'resetRequestEmail', { url: self._action + '/reset?reset=' + reset }, function(err) {
+          return self.email(req, res, person, self.options.resetSubject || __('Your request to reset your password on %HOST%'), 'resetRequestEmail', { url: self._action + '/reset?reset=' + reset }, function(err) {
             if (err) {
               return callback(err);
             }
@@ -290,7 +291,7 @@ people.People = function(options, callback) {
           });
         }
       }, function(err) {
-        return res.send(self.renderPage(req, done ? 'resetRequestSent' : 'resetRequest', { message: err }));
+        return res.send(self.renderPage(req, res, done ? 'resetRequestSent' : 'resetRequest', { message: err }));
       });
     });
 
@@ -303,15 +304,15 @@ people.People = function(options, callback) {
         validate: function(callback) {
           reset = self._apos.sanitizeString(req.query.reset || req.body.reset);
           if (!reset) {
-            return callback('You may have copied and pasted the link incorrectly. Please check the email you received.');
+            return callback(__('You may have copied and pasted the link incorrectly. Please check the email you received.'));
           }
           if (req.method === 'POST') {
             if (req.body.password1 !== req.body.password2) {
-              return callback('Passwords do not match.');
+              return callback(__('Passwords do not match.'));
             }
             password = self._apos.sanitizeString(req.body.password1);
             if (!password) {
-              return callback('Please supply a new password.');
+              return callback(__('Please supply a new password.'));
             }
           }
           return callback(null);
@@ -346,7 +347,7 @@ people.People = function(options, callback) {
           });
         }
       }, function(err) {
-        return res.send(self.renderPage(req, template, { message: err, reset: reset }));
+        return res.send(self.renderPage(req, res, template, { message: err, reset: reset }));
       });
     });
 
@@ -487,7 +488,7 @@ people.People = function(options, callback) {
               }
               // For bc we still have support for an applySubject option separate
               // from .email.applyEmailSubject
-              return self.email(req, user, self.options.applySubject || 'Your request to create an account on {{ host }}', 'applyEmail', { url: self._action + '/confirm/' + user.applyConfirm }, function(err) {
+              return self.email(req, res, user, self.options.applySubject || __('Your request to create an account on {{ host }}'), 'applyEmail', { url: self._action + '/confirm/' + user.applyConfirm }, function(err) {
                 if (err) {
                   // Remove the person we just inserted if we have no way
                   // of communicating their confirmation link to them
@@ -555,7 +556,7 @@ people.People = function(options, callback) {
             });
           },
         }, function(err) {
-          return res.send(self.renderPage(req, err ? err : 'confirmed', { message: err, reset: reset }));
+          return res.send(self.renderPage(req, res, err ? err : 'confirmed', { message: err, reset: reset }));
         });
       });
     }
