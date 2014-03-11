@@ -403,7 +403,10 @@ people.People = function(options, callback) {
               });
             },
             put: function(callback) {
-              extend(true, user, set);
+              // _.extend, not extend(true). The latter is a merge that appends arrays to existing
+              // arrays which is NOT what we want and prevents a user from ever removing anything
+              // from a list. _.extend just replaces properties at top level which is what we want here.
+              _.extend(user, set);
               return self.putOne(req, req.user.slug, { permissions: false }, user, callback);
             }
           }, function(err) {
