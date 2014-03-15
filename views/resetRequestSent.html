@@ -1,15 +1,15 @@
 {% extends "loginBase.html" %}
 
-{% block subTitle %}Email Sent{% endblock %}
-{% block subHeading %}EMAIL SENT{% endblock %}
+{% block subTitle %}{{ __('Email Sent') }}{% endblock %}
+{% block subHeading %}{{ __('EMAIL SENT') }}{% endblock %}
 
 {% block form %}
 <p>
   {# Don't show their email address, if they are guessing usernames that gives them #}
   {# somebody to spam. -Tom #}
-  An email message has been sent to you containing a special link that will allow you to reset your password. If you do not receive it within 24 hours, please be sure to check your spam folder.
+  {{ __('An email message has been sent to you containing a special link that will allow you to reset your password. If you do not receive it within 24 hours, please be sure to check your spam folder.') }}
 </p>
 <p>
-  <a href="/">Home</a>
+  <a href="/">{{ __('Home') }}</a>
 </p>
 {% endblock %}
