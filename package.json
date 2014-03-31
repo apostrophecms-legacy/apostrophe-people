@@ -23,7 +23,7 @@
   "license": "MIT",
   "dependencies": {
     "async": "~0.2.8",
-    "underscore": "~1.4.x",
+    "lodash": "2.4.x",
     "extend": "~1.1.x",
     "moment": "~2.0.x",
     "password-hash": "~1.2.1",
