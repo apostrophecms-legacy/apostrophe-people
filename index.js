@@ -378,13 +378,15 @@ people.People = function(options, callback) {
         });
         if (req.method === 'POST') {
           var set = {};
-          self.convertSomeFields(schemaSubset, 'form', req.body, set);
           var user;
           // We can't just do an update query because we want
           // overrides of putOne to be respected. Get the user again,
           // via getPage, so that no joins or excessive cleverness like
           // deletion of the password field come into play.
           return async.series({
+            convert: function(callback) {
+              return self._schemas.convertFields(req, schemaSubset, 'form', req.body, set, callback);
+            },
             get: function(callback) {
               return self._apos.getPage(req, req.user.slug, { permissions: false }, function(err, snippet) {
                 if (err) {
@@ -432,8 +434,10 @@ people.People = function(options, callback) {
         var group;
         if (req.method === 'POST') {
           var user = { applicant: true, applied: new Date() };
-          self.convertSomeFields(schemaSubset, 'form', req.body, user);
           return async.series({
+            convert: function(callback) {
+              return self._schemas.convertFields(req, schemaSubset, 'form', req.body, user, callback);
+            },
             ensureGroup: function(callback) {
               if (options.applyGroup === false) {
                 return callback(null);
