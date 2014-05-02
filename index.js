@@ -621,7 +621,7 @@ people.People = function(options, callback) {
       getGroups = false;
     }
 
-    if (!options.sort) {
+    if ((!options.sort) && (!options.search) && (!options.q)) {
       options.sort = { lastName: 1, firstName: 1 };
     }
 
