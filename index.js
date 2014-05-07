@@ -365,6 +365,10 @@ people.People = function(options, callback) {
         if (err) {
           return res.send({ status: err ? 'error' : 'ok' });
         }
+        if (!_snippet) {
+          // Hardcoded user has no profile, UI shouldn't offer it but don't crash
+          return res.send({ status: 'notfound' });
+        }
         // Never allow this to go over the wire, even hashed it's terrible to do that
         delete _snippet.password;
 

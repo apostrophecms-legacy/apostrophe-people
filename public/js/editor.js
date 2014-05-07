@@ -139,7 +139,9 @@ function AposPeople(optionsArg) {
 
   if (self.manager) {
     // Edit a personal profile
-    $('body').on('click', '[data-edit-profile]', function() {
+    // Used profile-edit instead of edit-profile to avoid conflict when
+    // someone names a snippet instance type "profile." -Tom
+    $('body').on('click', '[data-profile-edit]', function() {
       $.getJSON(self._action + '/profile', function(data) {
         if (data.status !== 'ok') {
           alert('A server error occurred.');
