@@ -192,17 +192,6 @@ people.People = function(options, callback) {
 
       generate();
 
-      // With this rule in place it is difficult to offer any help to users
-      // in choosing unique usernames during the application process. -Tom
-      //
-      // self._apos.permissions(req, 'edit-people', null, function(err) {
-      //   if (err) {
-      //     res.statusCode = 404;
-      //     return res.send('notfound');
-      //   }
-      //   return generate();
-      // });
-
       function generate() {
         var username = req.body.username;
         return self.usernameUnique(username, function(err, usernameArg) {
@@ -217,14 +206,6 @@ people.People = function(options, callback) {
     });
 
     self._app.post(self._action + '/generate-password', function(req, res) {
-      // We need to open this up so that users can apply for accounts
-      // self._apos.permissions(req, 'edit-profile', null, function(err) {
-      //   if (err) {
-      //     res.statusCode = 404;
-      //     return res.send('notfound');
-      //   }
-      //   return generate();
-      // });
       generate();
       function generate() {
         return res.send({ password: pwgen.generatePassword().replace(/\-/g, ' ') });

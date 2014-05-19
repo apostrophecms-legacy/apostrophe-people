@@ -22,7 +22,7 @@
   "author": "P'unk Avenue LLC",
   "license": "MIT",
   "dependencies": {
-    "async": "~0.2.8",
+    "async": "0.8.x",
     "lodash": "2.4.x",
     "extend": "~1.1.x",
     "moment": "~2.0.x",
