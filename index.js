@@ -427,16 +427,12 @@ people.People = function(options, callback) {
               if (options.applyGroup === false) {
                 return callback(null);
               }
-              self.getGroupsManager().getOne(req, { title: options.applyGroup }, { permissions: false }, function(err, _group) {
-                if (_group) {
-                  group = _group;
-                  return callback(null);
+              return self.getGroupsManager().ensureExists(options.applyGroup, options.applyGroupPermissions || [], function(err, _group) {
+                if (err) {
+                  return callback(err);
                 }
-                group = {
-                  title: options.applyGroup,
-                  permissions: options.applyGroupPermissions || []
-                };
-                return self.getGroupsManager().putOne(req, { permissions: false }, group, callback);
+                group = _group;
+                return callback(null);
               });
             },
             beforeSave: function(callback) {
@@ -460,7 +456,9 @@ people.People = function(options, callback) {
               });
             },
             put: function(callback) {
-              user.groupIds = [ group._id ];
+              if (options.applyGroup !== false) {
+                user.groupIds = [ group._id ];
+              }
               if (options.applyConfirm === false) {
                 user.login = true;
               } else {
@@ -687,8 +685,13 @@ people.People = function(options, callback) {
   // affect existing users, just two newcomers signing up at the same
   // millisecond.) TODO: think harder about accommodating unique indexes
   // in a collection of heterogenous documents like people, pages, blog posts etc.
+  //
+  // Also supplies title if it is missing and first or last name is set.
 
   self.beforePutOne = function(req, slug, options, snippet, callback) {
+    if ((!snippet.title) && (snippet.firstName || snippet.lastName)) {
+      snippet.title = snippet.firstName + ' ' + snippet.lastName;
+    }
     return async.series({
       uniqueEmail: function(callback) {
         if (!snippet.email) {
