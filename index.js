@@ -427,7 +427,7 @@ people.People = function(options, callback) {
               if (options.applyGroup === false) {
                 return callback(null);
               }
-              return self.getGroupsManager().ensureExists(options.applyGroup, options.applyGroupPermissions || [], function(err, _group) {
+              return self.getGroupsManager().ensureExists(req, options.applyGroup, options.applyGroupPermissions || [], function(err, _group) {
                 if (err) {
                   return callback(err);
                 }
