@@ -1,17 +1,73 @@
 {% extends 'newBase.html' %}
+
+{% block buttons %}
+  {{ snippetNewControls() }}
+{% endblock %}
+
+{% block topButtons %}
+{% endblock %}
+
 {% block insideForm %}
 
-  {{ snippetAllFields(fields, { to: 'password' }) }}
-  {% block afterPassword %}
-    <div class="apos-suggested-password" data-suggested-password>{{ __("This user's default password is: %s", '<span data-suggestion class="apos-suggestion">js populates me</span>') }}</div>
-  {% endblock %}
-  {{ snippetAllFields(fields, { after: 'password' }) }}
+  {{ snippetAllFields(fields, {before: 'login'} ) }}
 
-  <div class="apos-person-read-only-groups">
-    <h4>{{ __('Groups') }}</h4>
-    <p>{{ __("Edit this user's group memberships by editing the groups in question.") }}</p>
-    <ul data-groups class="apos-person-groups">
-      <li data-group class="apos-template apos-person-group"><span class="apos-person-group-name" data-name>{{ __('Group Name') }}</span><span class="apos-person-job-title" data-job-title>{{ __('Job Title') }}</span></li>
-    </ul>
+  <div class="apos-modal-tabs">
+    <div class="apos-modal-tab-control">
+      <div class="apos-modal-tab-title apos-active" data-tab="groupProfile">
+        Profile
+      </div>
+      <div class="apos-modal-tab-title" data-tab="groupUser">
+        User
+      </div>
+      <div class="apos-modal-tab-title" data-tab="groupContact">
+        Contact
+      </div>
+      <div class="apos-modal-tab-title" data-tab="groupAdmin">
+        Admin
+      </div>
+    </div>
+
+    <div class="apos-modal-tab apos-active" data-tab-id="groupProfile">
+      <div class="apos-modal-tab-content">
+        {{ snippetSingleton('thumbnail', 'Picture') }}
+        {{ snippetSingleton('body', 'Body') }}
+      </div>
+    </div>
+
+    <div class="apos-modal-tab" data-tab-id="groupUser">
+      <div class="apos-modal-tab-content">
+        {{ snippetText('username', 'Username') }}
+        {{ snippetPassword('password', 'Password') }}
+        {% block afterPassword %}
+          <div class="apos-suggested-password" data-suggested-password>{{ __("This user's default password is: %s", '<span data-suggestion class="apos-suggestion">js populates me</span>') }}</div>
+        {% endblock %}
+        {{ snippetBoolean('login', 'Can Log In')}}
+      </div>
+    </div>
+
+    <div class="apos-modal-tab" data-tab-id="groupContact">
+      <div class="apos-modal-tab-content">
+        {{ snippetEmail('email', 'Email') }}
+        {{ snippetText('phone', 'Phone') }}
+      </div>
+    </div>
+
+    <div class="apos-modal-tab" data-tab-id="groupAdmin">
+      <div class="apos-modal-tab-content">
+        {{ snippetBoolean('published', 'Published') }}
+        {{ snippetTags('tags', 'Tags') }}
+        <div class="apos-person-read-only-groups">
+          <h4>{{ __('Groups') }}</h4>
+          <p>{{ __("Edit this user's group memberships by editing the groups in question.") }}</p>
+          <ul data-groups class="apos-person-groups">
+            <li data-group class="apos-template apos-person-group"><span class="apos-person-group-name" data-name>{{ __('Group Name') }}</span><span class="apos-person-job-title" data-job-title>{{ __('Job Title') }}</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
   </div>
+
+
+
 {% endblock %}
