@@ -395,7 +395,7 @@ people.People = function(options, callback) {
             res.send({ status: err ? 'error' : 'ok' });
           });
         } else {
-          return res.send({ status: 'ok', profile: snippet, fields: schemaSubset, template: self.render('profileEditor', { fields: schemaSubset }) });
+          return res.send({ status: 'ok', profile: snippet, fields: schemaSubset, template: self.render('profileEditor', { fields: schemaSubset }, req) });
         }
       });
     });
@@ -513,7 +513,7 @@ people.People = function(options, callback) {
           });
         } else {
           var piece = self.newInstance();
-          return res.send({ status: 'ok', fields: schemaSubset, piece: piece, template: self.render('apply', { fields: schemaSubset }) });
+          return res.send({ status: 'ok', fields: schemaSubset, piece: piece, template: self.render('apply', { fields: schemaSubset }, req) });
         }
       });
 
