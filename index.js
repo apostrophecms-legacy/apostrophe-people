@@ -129,6 +129,47 @@ people.People = function(options, callback) {
 
   options.removeFields = [ 'hideTitle' ].concat(options.removeFields || []);
 
+  // If somebody REALLY doesn't want to group their fields,
+  // take the hint, otherwise supply a default behavior
+  if (options.groupFields !== false) {
+    options.groupFields = options.groupFields ||
+      // We don't list the title field so it stays on top
+      [
+        {
+          name: 'profile',
+          label: 'Profile',
+          icon: 'user',
+          fields: [
+            'firstName', 'lastName', 'title', 'thumbnail', 'body'
+          ]
+        },
+        {
+          name: 'user',
+          label: 'User',
+          icon: 'metadata',
+          fields: [
+            'username', 'password', 'login'
+          ]
+        },
+        {
+          name: 'contact',
+          label: 'Contact',
+          icon: 'contact',
+          fields: [
+            'email', 'phone'
+          ]
+        },
+        {
+          name: 'admin',
+          label: 'Admin',
+          icon: 'metadata',
+          fields: [
+            'published', 'tags'
+          ]
+        }
+      ];
+  }
+
   self._groupsType = options.groupsType;
 
   options.modules = (options.modules || []).concat([ { dir: __dirname, name: 'people' } ]);
