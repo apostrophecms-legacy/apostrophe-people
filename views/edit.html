@@ -1,17 +1,10 @@
 {% extends "new.html" %}
-
 {% include "snippetMacros.html" %}
 
-{% block class %}{{ editClass }}{% endblock %}
+{% block modalLabel %}Edit {{ instanceLabel }}{% endblock %}
 
-{% block label %}Edit {{ instanceLabel }}{% endblock %}
-
-{% block topButtons %}
-{{ snippetEditControls() }}
-{% endblock %}
-
-{% block buttons %}
-{{ snippetEditControls() }}
+{% block modalClass %}
+  {{super() }} {{editClass}}
 {% endblock %}
 
 {% block afterPassword %}
