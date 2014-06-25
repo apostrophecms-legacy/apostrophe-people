@@ -1,17 +1,17 @@
 {% extends "baseWidgetEditor.html" %}
 {% include "formMacros.html" %}
 
-{% block widgetVars %}
-  {% set widgetClass = 'apos-people-widget-editor' %}
+{% block modalClass %}
+  {{super()}} apos-people-widget-editor
 {% endblock %}
 
-{% block title %}
+{% block modalLabel %}
   {{ __('Display People') }}
 {% endblock %}
 
-{% block instructions %}
-{{ __('Start typing the name of a person, then click on the suggestions that appear to insert them.
-Or just use tags to pull in people.') }}
+{% block modalInstructions %}
+<p>{{ __('Start typing the name of a person, then click on the suggestions that appear to insert them.
+Or just use tags to pull in people.') }}</p>
 {% endblock %}
 
 {% block formBody %}
@@ -33,4 +33,3 @@ Or just use tags to pull in people.') }}
 {{ formSelective('ids', 'People') }}
 
 {% endblock %}
-
