@@ -1,21 +1,27 @@
+{% extends 'baseModal.html' %}
+{% include 'uiMacros.html' %}
 {% include 'snippetMacros.html' %}
-<div class="apos-modal apos-template apos-person-apply">
-  <h3>{{ __('Sign Up For An Account') }}</h3>
-  {% block topButtons %}
-  {% endblock %}
-  <div class="apos-modal-body">
-    <form>
-      {{ snippetAllFields(fields, { to: 'password' }) }}
-      {% block afterPassword %}
-        <div class="apos-suggested-password" data-suggested-password>{{ __('Your suggested password is: %s', '<span data-suggestion class="apos-suggestion">js populates me</span>') }}</div>
-      {% endblock %}
-      {{ snippetAllFields(fields, { after: 'password' }) }}
-    </form>
-  </div>
-  <div class="apos-modal-footer">
-    <div class="apos-modal-footer-buttons">
-      <a href="#" data-action="dismiss" class="apos-control apos-button apos-cancel">{{ __('Cancel') }}</a>
-      <a href="#" class="apos-control apos-button apos-save">{{ __('Sign Up') }}</a>
-    </div>
-  </div>
-</div>
+
+{% block modalClass %}
+  apos-person-apply
+{% endblock %}
+
+{% block modalLabel %}
+  {{ __('Sign Up For An Account') }}
+{% endblock %}
+
+{% block modalControls %}
+  {{ renderProgressBtn({dataAttrs: 'data-save', float: 'right', color: 'base', label: __('Sign Up')}) }}
+  {{ renderProgressBtn({dataAttrs: 'data-cancel', float: 'left', arrow: 'left', label: __('Cancel')}) }}
+{% endblock %}
+
+{% block modalBody %}
+  <form>
+    {{ snippetAllFields(fields) }}
+    {# {% block afterPassword %}
+
+    {% endblock %} }
+    <div class="apos-suggested-password" data-suggested-password>{{ __('Your suggested password is: %s', '<span data-suggestion class="apos-suggestion">js populates me</span>') }}</div>
+    {{ snippetAllFields(fields, { after: 'password' }) }#}
+  </form>
+{% endblock %}

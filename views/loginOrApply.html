@@ -1,19 +1,24 @@
+{% extends 'baseModal.html' %}
+{% include 'uiMacros.html' %}
 {% include 'snippetMacros.html' %}
-<div class="apos-modal apos-template apos-people-login-or-apply">
-  <div>
-    <h3>{{ __('You need an account to do that') }}</h3>
 
-    <div class="apos-modal-body">
-      <h4>
-        {{ __('Please register for an account first. If you already have one, <a href="/login">log in here</a>.') }}
-      </h4>
-    </div>
+{% block modalClass %}
+  apos-people-login-or-apply apos-ui-modal-no-sidebar
+{% endblock %}
 
-    <div class="apos-modal-footer">
-      <form>
-        <a href="#" class="apos-control apos-signup apos-button" data-apply>{{ __('Set up an account') }}</a>
-        <a href="#" data-action="dismiss" class="apos-control apos-button apos-cancel">{{ __('Never Mind') }}</a>
-      </form>
-    </div>
+{% block modalLabel %}
+  {{ __('You need an account to do that') }}
+{% endblock %}
+
+{% block modalControls %}
+  {{ renderProgressBtn({dataAttrs: 'data-apply', float: 'right', color: 'base', label: __('Set up an account')}) }}
+  {{ renderProgressBtn({dataAttrs: 'data-cancel', float: 'left', arrow: 'left', label: __('Never Mind')}) }}
+{% endblock %}
+
+{% block modalBody %}
+  <div class="apos-modal-body">
+    <h4>
+      {{ __('Please register for an account first. If you already have one, <a href="/login">log in here</a>.') }}
+    </h4>
   </div>
-</div>
+{% endblock%}

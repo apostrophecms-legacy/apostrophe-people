@@ -1,25 +1,35 @@
+{% extends 'baseModal.html' %}
+{% include 'uiMacros.html' %}
 {% include 'snippetMacros.html' %}
-<div class="apos-modal apos-template {% block class %}{{ newClass }}{% endblock %}">
-  <h3>{% block label %}New {{ instanceLabel | e }}{% endblock %}</h3>
-  {% block topButtons %}
-  {% endblock %}
-  <div class="apos-modal-body">
-    <form>
-      {# Hardcoded fields (TODO: do away with them!) #}
-      {# We use CSS-style names (with hyphens) for fields in forms since #}
-      {# forms don't support mixed case and we have apos.cssName to convert them #}
-      {{ snippetText('first-name', 'First Name') }}
-      {{ snippetText('last-name', 'Last Name') }}
-      {# title is universal across all snippets and should be the person's full name as #}
-      {# they prefer to see it online. Please use 'jobTitle' if you need a property for #}
-      {# someone's position at work #}
-      {{ snippetText('title', __('Name')) }}
 
-      {# All schema fields #}
-      {{ snippetAllFields(fields) }}
-    </form>
-  </div>
-  {% block buttons %}
-  {{ snippetNewControls() }}
-  {% endblock %}
-</div>
+{% block modalClass %}
+  {{ newClass }} apos-ui-modal-no-sidebar
+{% endblock %}
+
+{% block modalLabel %}
+  New {{ instanceLabel | e }}
+{% endblock %}
+
+{% block modalControls %}
+  {{ renderProgressBtn({dataAttrs: 'data-save data-next', float: 'right', color: 'base', label: __('Add Next')}) }}
+  {{ renderProgressBtn({dataAttrs: 'data-save', float: 'right', color: 'base', label: __('Add')}) }}
+  {{ renderProgressBtn({dataAttrs: 'data-cancel', float: 'left', arrow: 'left', label: __('Cancel')}) }}
+{% endblock %}
+
+{% block modalBody %}
+  <form>
+    {# Hardcoded fields (TODO: do away with them!) #}
+    {# We use CSS-style names (with hyphens) for fields in forms since #}
+    {# forms don't support mixed case and we have apos.cssName to convert them #}
+    {{ snippetText('first-name', 'First Name') }}
+    Hi I'm Joel
+    {{ snippetText('last-name', 'Last Name') }}
+    {# title is universal across all snippets and should be the person's full name as #}
+    {# they prefer to see it online. Please use 'jobTitle' if you need a property for #}
+    {# someone's position at work #}
+    {{ snippetText('title', __('Name')) }}
+
+    {# All schema fields #}
+    {{ snippetAllFields(fields) }}
+  </form>
+{% endblock %}
