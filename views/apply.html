@@ -21,7 +21,7 @@
     {# {% block afterPassword %}
 
     {% endblock %} }
-    <div class="apos-suggested-password" data-suggested-password>{{ __('Your suggested password is: %s', '<span data-suggestion class="apos-suggestion">js populates me</span>') }}</div>
+    <div class="apos-suggested-password" data-suggested-password>{{ __('Your suggested password is: %s', '<span data-suggestion class="apos-suggestion">__('js populates me')</span>') }}</div>
     {{ snippetAllFields(fields, { after: 'password' }) }#}
   </form>
 {% endblock %}
