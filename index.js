@@ -304,7 +304,8 @@ people.People = function(options, callback) {
         send: function(callback) {
           // For bc we still have support for a resetSubject option separate
           // from .email.resetRequestEmailSubject
-          return self.email(req, person, self.options.resetSubject || __('Your request to reset your password on %HOST%'), 'resetRequestEmail', { url: self._action + '/reset?reset=' + reset }, function(err) {
+          var url = self._action + '/reset?reset=' + reset;
+          return self.email(req, person, self.options.resetSubject || __('Your request to reset your password on %HOST%'), 'resetRequestEmail', { url: url }, function(err) {
             if (err) {
               return callback(err);
             }
@@ -322,6 +323,7 @@ people.People = function(options, callback) {
       var person;
       var password;
       var template = 'reset';
+      var __ = res.__;
       return async.series({
         validate: function(callback) {
           reset = self._apos.sanitizeString(req.query.reset || req.body.reset);

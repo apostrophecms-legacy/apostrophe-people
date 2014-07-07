@@ -4,7 +4,7 @@
 {% block subHeading %}{{ __('CHANGE YOUR PASSWORD') }}{% endblock %}
 {% block action %}/apos-people/reset{% endblock %}
 {% block fields %}
-  <input name="reset" value="{{ reset| e }}" type="hidden" />
+  <input name="reset" value="{{ reset | e }}" type="hidden" />
   <div class="login-password">
     <label>{{ __('New Password') }}</label>
     <input type="password" name="password1" />
