@@ -202,3 +202,20 @@ Note the use of hyphenated names.
 
 Now users who create accounts via the online application process will be able to immediately begin submitting and editing their own content, but will *not* be able to mark it as "published," and if you use the moderator module there will be an easy way for admins to filter and view the submitted content.
 
+### Extra Fields: How Job Titles Work
+
+You'll notice that, by default, you're prompted for a job title for each person you add to the group. This information is accessible in templates this way:
+
+```javascript
+person.groupExtras[groupId].jobTitle
+```
+
+If you don't want this feature, you can disable it with the `peopleExtras` option when configuring the `apostrophe-groups` module:
+
+```javascript
+peopleExtras: false
+```
+
+You can also specify an array of extra fields, replacing the usual job title field. The syntax is a subset of that supported by Apostrophe schemas. We recommend sticking to simple `string` and `select` field types here.
+
+**The relationship between people and groups is currently not an A2 join in the usual sense.** We're not crazy about that, and we may migrate to using standard A2 joins and relationships in the future.
