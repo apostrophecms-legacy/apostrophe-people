@@ -867,6 +867,41 @@ people.People = function(options, callback) {
     return superImportCreateItem(req, data, callback);
   };
 
+  // Allow group memberships to be imported by name. TODO: this is
+  // a bit inefficient, we should cache the group IDs. Better yet,
+  // we should reconcile our group/person relationships with
+  // modern A2 joins, which can be imported out of the box.
+
+  var superImportSaveItem = self.importSaveItem;
+
+  self.importSaveItem = function(req, data, snippet, callback) {
+    var groups = apos.sanitizeString(data.groups || data.Groups).split(/,\s*/);
+    snippet.groupIds = snippet.groupIds || [];
+    return async.eachSeries(groups, function(groupName) {
+      if (typeof(groupName) !== 'string') {
+        return callback(null);
+      }
+      groupName = groupName.trim();
+      if (!groupName) {
+        return callback(null);
+      }
+      var group;
+      return self.getGroupsManager().ensureExists(req, groupName, [], function(err, _group) {
+        if (err) {
+          return callback(err);
+        }
+        snippet.groupIds.push(_group._id);
+        return callback(null);
+      });
+    }, function(err) {
+      if (err) {
+        return callback(err);
+      }
+      console.log(snippet.groupIds);
+      return superImportSaveItem(req, data, snippet, callback);
+    });
+  };
+
   if (self.manager) {
     var superPushAllAssets = self.pushAllAssets;
     self.pushAllAssets = function() {
