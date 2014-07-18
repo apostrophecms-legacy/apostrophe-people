@@ -1,10 +1,6 @@
 {
   "name": "apostrophe-people",
-<<<<<<< HEAD
-  "version": "0.5.26",
-=======
   "version": "0.5.27",
->>>>>>> 78abef77fe0d9303d9388de05dd7b07a59152ba9
   "description": "Staff directories, user accounts and personal profiles for the Apostrophe content management system",
   "main": "index.js",
   "scripts": {
