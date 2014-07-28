@@ -33,6 +33,8 @@ people.People = function(options, callback) {
   // Only admins can edit this data type
   self._adminOnly = true;
 
+  self._schemas = options.schemas;
+
   _.defaults(options, {
     instance: 'person',
     name: options.name || 'people',
@@ -124,6 +126,15 @@ people.People = function(options, callback) {
       name: 'phone',
       label: 'Phone',
       type: 'string'
+    },
+    // This field is defined to assist in importing groups
+    // from CSV. The contextual flag prevents it from appearing
+    // in forms. -Tom
+    {
+      name: 'groups',
+      label: 'Groups',
+      type: 'a2Groups',
+      contextual: true
     }
   ].concat(options.addFields || []);
 
@@ -169,6 +180,44 @@ people.People = function(options, callback) {
         }
       ];
   }
+
+  self._schemas.addFieldType({
+    name: 'a2Groups',
+    render: function(data) {
+      throw new Error('a2Groups should never appear in a form, you probably removed the contextual flag');
+    },
+    converters: {
+      form: function(req, data, name, snippet, field, callback) {
+        throw new Error('a2Groups should never appear in a form, you probably removed the contextual flag');
+      },
+      csv: function(req, data, name, snippet, field, callback) {
+        var groups = self._apos.sanitizeString(data.groups).split(/,\s*/);
+        snippet.groupIds = snippet.groupIds || [];
+        return async.eachSeries(groups, function(groupName, callback) {
+          if (typeof(groupName) !== 'string') {
+            return callback(null);
+          }
+          groupName = groupName.trim();
+          if (!groupName) {
+            return callback(null);
+          }
+          var group;
+          return self.getGroupsManager().ensureExists(req, groupName, [], function(err, _group) {
+            if (err) {
+              return callback(err);
+            }
+            snippet.groupIds.push(_group._id);
+            return callback(null);
+          });
+        }, function(err) {
+          if (err) {
+            return callback(err);
+          }
+          return callback(null);
+        });
+      }
+    }
+  });
 
   self._groupsType = options.groupsType;
 
@@ -871,36 +920,6 @@ people.People = function(options, callback) {
   // a bit inefficient, we should cache the group IDs. Better yet,
   // we should reconcile our group/person relationships with
   // modern A2 joins, which can be imported out of the box.
-
-  var superImportSaveItem = self.importSaveItem;
-
-  self.importSaveItem = function(req, data, snippet, callback) {
-    var groups = apos.sanitizeString(data.groups || data.Groups).split(/,\s*/);
-    snippet.groupIds = snippet.groupIds || [];
-    return async.eachSeries(groups, function(groupName) {
-      if (typeof(groupName) !== 'string') {
-        return callback(null);
-      }
-      groupName = groupName.trim();
-      if (!groupName) {
-        return callback(null);
-      }
-      var group;
-      return self.getGroupsManager().ensureExists(req, groupName, [], function(err, _group) {
-        if (err) {
-          return callback(err);
-        }
-        snippet.groupIds.push(_group._id);
-        return callback(null);
-      });
-    }, function(err) {
-      if (err) {
-        return callback(err);
-      }
-      console.log(snippet.groupIds);
-      return superImportSaveItem(req, data, snippet, callback);
-    });
-  };
 
   if (self.manager) {
     var superPushAllAssets = self.pushAllAssets;
