@@ -6,6 +6,7 @@ var util = require('util');
 var moment = require('moment');
 var pwgen = require('xkcd-pwgen');
 var nodemailer = require('nodemailer');
+var passwordHash = require('password-hash');
 
 // Creating an instance of the people module is easy:
 // var people = require('apostrophe-people')(options, callback);
@@ -300,6 +301,60 @@ people.People = function(options, callback) {
       function generate() {
         return res.send({ password: pwgen.generatePassword().replace(/\-/g, ' ') });
       }
+    });
+
+    self._app.post(self._action + '/change-password', function(req, res) {
+      var __ = res.__;
+      var oldPassword,
+          newPassword,
+          person;
+      // use the callback concatination in async.series instead of vars as reset-request does
+      return async.series({
+        validate: function(callback) {
+          oldPassword = self._apos.sanitizeString(req.body.oldPassword);
+          newPassword = self._apos.sanitizeString(req.body.newPassword);
+          if (!oldPassword) {
+            return callback(__('Old Password is required'));
+          }
+          return callback(null);
+        },
+        get: function(callback) {
+          return self._apos.pages.findOne({
+            type: 'person',
+            login: true,
+            _id: req.user._id
+          }, function(err, page) {
+            if (err) {
+              return callback(err);
+            }
+            if (!page) {
+              return callback(__('No user with that username or email address was found, or there is no email address associated with your account. Please try again or contact your administrator.'));
+            }
+            person = page;
+            return callback(null);
+          });
+        },
+        confirm: function(callback) {
+          // confirm oldPassword matches what's in the DB
+          if (!passwordHash.verify(oldPassword, person.password)) {
+            return callback(__('Old password was incorrect'));
+          }
+          return callback(null);
+        },
+        update: function(callback) {
+          // save hash of new password in db
+          var password = self.hashPassword(newPassword);
+          return self._apos.pages.update({ _id: person._id }, { $set: { password: password }, $unset: { $resetPassword: 1 } }, function(err, count) {
+            if (err || (!count)) {
+              return callback(null);
+            }
+            return callback(null);
+          });
+        }
+      }, function(err) {
+        // res.send error or results
+        res.send({ status: (err) ? 'error' : 'ok'});
+      });
     });
 
     self._app.get(self._action + '/reset-request', function(req, res) {
@@ -939,6 +994,7 @@ people.People = function(options, callback) {
         self.pushAsset('script', 'apply', { when: 'always' });
         self.pushAsset('template', 'loginOrApply', { when: 'always' });
       }
+      self.pushAsset('template', 'passwordEditor', { when: 'user' });
     };
   }
 

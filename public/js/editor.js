@@ -172,5 +172,80 @@ function AposPeople(optionsArg) {
       return false;
     });
   }
+
+  $('body').on('click', '[data-password-change]', function(){
+    var tagEditor = new AposPasswordEditor({action: self._action});
+    tagEditor.modal();
+    return false;
+  });
 }
 
+function AposPasswordEditor(options) {
+  var self = this;
+  if (!options) {
+    options = {};
+  }
+  self._action = options.action || '/apos-people';
+
+  // Call this method after constructing the object
+  self.modal = function() {
+    self.$el = apos.modalFromTemplate('.apos-password-editor', self);
+  };
+
+  self.init = function(callback) {
+    console.log(self.$el[0]);
+    return callback(null);
+  }
+
+  self.save = function(callback) {
+    // validate passwords match and fields are entered
+    var oldPassword = self.$el.findByName('oldPassword').val();
+    var newPassword = self.$el.findByName('newPassword').val();
+    var confirmPassword = self.$el.findByName('confirmPassword').val();
+
+    if (!oldPassword){
+      //error
+      aposSchemas.addError(self.$el, 'oldPassword', true);
+      return callback('Old Password is required');
+    }
+    if (!newPassword){
+      //error
+      aposSchemas.addError(self.$el, 'newPassword', true);
+      return callback('New Password is required');
+    }
+    if (!confirmPassword){
+      //error
+      aposSchemas.addError(self.$el, 'confirmPassword', true);
+      return callback('Password confirmation is required');
+    }
+    if (newPassword !== confirmPassword){
+      //error
+      aposSchemas.addError(self.$el, 'newPassword');
+      alert('New passwords did not match');
+      return callback('New Passwords did not match');
+    }
+
+    $.jsonCall(
+      self._action + '/change-password',  
+      {
+        oldPassword: oldPassword,
+        newPassword: newPassword
+      },
+      function(data) {
+        if (data.status == 'ok') {
+          alert('Your password has been changed');
+          return callback(null);
+        } else {
+          alert('You did not enter your old password correctly');
+          return callback('You did not enter your old password correctly');
+        }
+      },
+      function(data) {
+        alert('An error occurred. Please try again.');
+        return callback('An error occurred in server response');
+      }
+    );
+
+
+  }
+}
