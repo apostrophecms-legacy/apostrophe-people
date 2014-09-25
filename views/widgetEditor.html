@@ -2,7 +2,7 @@
 {% include "formMacros.html" %}
 
 {% block modalClass %}
-  {{super()}} apos-people-widget-editor
+  {{widgetEditorClass}} apos-ui-modal-no-sidebar apos-people-widget-editor
 {% endblock %}
 
 {% block modalLabel %}
@@ -16,20 +16,31 @@ Or just use tags to pull in people.') }}</p>
 
 {% block formBody %}
 
-<fieldset class="apos-fieldset apos-fieldset-radio">
-  <label>{{ __('By Tag') }}</label><input type="radio" name="by" value="tag" />
+<fieldset data-sources class="apos-fieldset apos-fieldset-inset-controller apos-fieldset-select apos-fieldset-selectize">
+  <label class="apos-by-label apos-wide-label">{{ __('Add') }} {{ pluralPieceLabel }} {{ __('By') }}</label>
+    <div class="apos-select-wrapper apos-inline-input">
+      <select class="apos-by" name="by" data-selectize>
+        <option value="id">{{pieceLabel}} {{ __('Name') }}</option>
+        <option value="tag">{{pieceLabel}} {{ __('Tag(s)') }}</option>
+      </select>
+    </div>
 </fieldset>
 
-{{ formTags('tags', 'Tags') }}
-{{ formText('limit', 'People Shown') }}
-
-<hr class="apos-hr" />
-
-<fieldset class="apos-fieldset apos-fieldset-radio">
-  <label>{{ __('By Name') }}</label>
-  <input type="radio" name="by" value="id" />
+<fieldset class="apos-fieldset apos-fieldset-text apos-fieldset-inset apos-fieldset-by apos-fieldset-no-margin" data-by="id">
+  <label class="apos-wide-label">{{ __('By Name') }}</label>
+  {{ formSelective('ids', __('Title'), { inline: true, placeholder: __('Type a name here') }) }}
 </fieldset>
 
-{{ formSelective('ids', 'People') }}
+<fieldset class="apos-fieldset apos-fieldset-tags apos-fieldset-inset apos-fieldset-text apos-fieldset-by apos-fieldset-no-margin" data-by="tag">
+  <div class="apos-fieldset-inset-inner">
+    <label class="apos-wide-label">{{ __('By tag') }}</label>
+    {{ formTags('tags', 'Tags', { inline: true }) }}
+  </div>
+  <div class="apos-fieldset-inset-inner">
+    <label class="apos-wide-label">{{ __('Max People Shown') }}:</label>
+    <input type="text" name="limitByTag" class="apos-input-narrow" />
+  </div>
+</fieldset>
+
 
 {% endblock %}
