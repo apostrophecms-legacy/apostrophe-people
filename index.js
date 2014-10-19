@@ -502,12 +502,7 @@ people.People = function(options, callback) {
 
         // Copy only what we deem appropriate to the object that goes
         // over the wire
-        var snippet = {};
-        _.each(schemaSubset, function(field) {
-          // TODO: one of the many places we can get rid of this dumb distinction in
-          // storage location by type in the 0.5 series
-          snippet[field.name] = _snippet[field.name];
-        });
+        var snippet = _.pick(_snippet, schemaSubset);
         if (req.method === 'POST') {
           var set = {};
           var user;
