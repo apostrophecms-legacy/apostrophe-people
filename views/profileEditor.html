@@ -3,7 +3,7 @@
 {% include 'snippetMacros.html' %}
 
 {% block modalClass %}
-  apos-person-profile apos-ui-modal-no-sidebar
+  apos-person-profile apos-ui-modal-no-sidebar apos-ui-modal-has-tabs
 {% endblock %}
 
 {% block modalLabel %}
@@ -11,7 +11,7 @@
 {% endblock %}
 
 {% block modalControls %}
-  {{ renderProgressBtn({dataAttrs: 'data-save', float: 'right', color: 'base', label: __('Add')}) }}
+  {{ renderProgressBtn({dataAttrs: 'data-save', float: 'right', color: 'base', label: __('Save')}) }}
   {{ renderProgressBtn({dataAttrs: 'data-cancel', float: 'left', arrow: 'left', label: __('Cancel')}) }}
 {% endblock %}
 
