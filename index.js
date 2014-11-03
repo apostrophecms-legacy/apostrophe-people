@@ -502,7 +502,7 @@ people.People = function(options, callback) {
 
         // Copy only what we deem appropriate to the object that goes
         // over the wire
-        var snippet = _.pick(_snippet, schemaSubset);
+        var snippet = _.pick(_snippet, _.pluck(schemaSubset, 'name'));
         if (req.method === 'POST') {
           var set = {};
           var user;
