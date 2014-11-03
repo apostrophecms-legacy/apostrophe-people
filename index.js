@@ -1,11 +1,10 @@
+/* jshint node:true */
+
 var async = require('async');
 var _ = require('lodash');
 var extend = require('extend');
 var snippets = require('apostrophe-snippets');
-var util = require('util');
-var moment = require('moment');
 var pwgen = require('xkcd-pwgen');
-var nodemailer = require('nodemailer');
 var passwordHash = require('password-hash');
 
 // Creating an instance of the people module is easy:
@@ -202,7 +201,6 @@ people.People = function(options, callback) {
           if (!groupName) {
             return callback(null);
           }
-          var group;
           return self.getGroupsManager().ensureExists(req, groupName, [], function(err, _group) {
             if (err) {
               return callback(err);
@@ -483,9 +481,12 @@ people.People = function(options, callback) {
       if (!req.user) {
         return res.send({ 'status': 'notfound' });
       }
-      var schemaSubset = _.filter(self.schema, function(field) {
-        return _.contains(options.profileFields, field.name);
-      });
+      var schemaSubset = self._schemas.subset(self.schema, options.profileFields);
+      if (options.profileGroupFields) {
+        schemaSubset = self._schemas.refine(schemaSubset, {
+          groupFields: options.profileGroupFields
+        });
+      }
 
       // Get the entire user object. req.user does not contain joins for
       // performance reasons
@@ -500,9 +501,9 @@ people.People = function(options, callback) {
         // Never allow this to go over the wire, even hashed it's terrible to do that
         delete _snippet.password;
 
-        // Copy only what we deem appropriate to the object that goes
-        // over the wire
-        var snippet = _.pick(_snippet, _.pluck(schemaSubset, 'name'));
+        // Copy only what we deem appropriate to the object
+        // that goes over the wire
+        var snippet = self._schemas.subsetInstance(schemaSubset, _snippet);
         if (req.method === 'POST') {
           var set = {};
           var user;
@@ -801,13 +802,7 @@ people.People = function(options, callback) {
     return callback(null);
   };
 
-  function appendExtraFields(data, snippet, callback) {
-    return callback(null);
-  }
-
   self.beforeSave = function(req, data, snippet, callback) {
-    var oldUsername = snippet.username;
-    var oldEmail = snippet.email;
 
     // Leading _ is a mnemonic reminding me to NOT store plaintext passwords directly!
     var _password = self._apos.sanitizeString(data.password, null);

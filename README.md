@@ -93,6 +93,8 @@ All users who belong to a group with at least "guest" access may edit their prof
 
 You may choose the fields that are editable by the end user via the `profileFields` option. The first name, last name, and title fields are independent of the schema, but if you do not present them in the form they will not be overwritten when the profile is saved. You can customize the form by copying `profileEditor.html` from the people module to `lib/modules/apostrophe-people/profileEditor.html`.
 
+By default, the fields will remain in their usual tab groups within the profile editor, although any empty tabs will be discarded. If you wish to specify a different grouping, use the `profileGroupFields` option, which works exactly like `groupFields`.
+
 ### Applying For Accounts
 
 People may apply for accounts with login privileges if you set the `apply` option to `true` when configuring the `apostrophe-people` module.
