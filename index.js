@@ -782,7 +782,7 @@ people.People = function(options, callback) {
       if (getGroups) {
         // Avoid infinite recursion by passing getPeople: false
         // Let the groups permalink to their own best directory pages
-        return self._apos.joinByArray(req, results.snippets, 'groupIds', undefined, '_groups', { get: self.getGroupsManager().get, getOptions: { getPeople: false, permalink: true } }, function(err) {
+        return self._apos.joinByArray(req, results.snippets, 'groupIds', undefined, '_groups', { get: self.getGroupsManager().get, getOptions: { getPeople: false, withJoins: false, permalink: true } }, function(err) {
           if (err) {
             return callback(err);
           }
