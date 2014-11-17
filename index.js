@@ -781,8 +781,12 @@ people.People = function(options, callback) {
       });
       if (getGroups) {
         // Avoid infinite recursion by passing getPeople: false
-        // Let the groups permalink to their own best directory pages
-        return self._apos.joinByArray(req, results.snippets, 'groupIds', undefined, '_groups', { get: self.getGroupsManager().get, getOptions: { getPeople: false, withJoins: false, permalink: true } }, function(err) {
+        // Let the groups permalink to their own best directory pages.
+        // Apply the "if only one" rule to joins defined on groups
+        // themselves. This way the "show" page for a person can
+        // see items joined to its groups, but they do not slow
+        // down index views.
+        return self._apos.joinByArray(req, results.snippets, 'groupIds', undefined, '_groups', { get: self.getGroupsManager().get, getOptions: { getPeople: false, withJoins: (results.snippets.length > 1) ? false : undefined, permalink: true } }, function(err) {
           if (err) {
             return callback(err);
           }
