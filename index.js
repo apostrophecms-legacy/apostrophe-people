@@ -870,7 +870,7 @@ people.People = function(options, callback) {
             return callback(err);
           }
           if (existing) {
-            return callback('duplicateUsername');
+            return callback({ message: 'Duplicate Username' });
           }
           return callback(null);
         });
