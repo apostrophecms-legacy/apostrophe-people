@@ -623,9 +623,8 @@ people.People = function(options, callback) {
     }
 
     if (!options.sort) {
-      options.sort = { lastName: 1, firstName: 1 };
+      options.sort = { sortLastName: 1, sortFirstName: 1 };
     }
-
     var criteria = {
       $and: [
         userCriteria,
@@ -705,6 +704,8 @@ people.People = function(options, callback) {
   // in a collection of heterogenous documents like people, pages, blog posts etc.
 
   self.beforePutOne = function(req, slug, options, snippet, callback) {
+    snippet.sortFirstName = snippet.firstName ? self._apos.sortify(snippet.firstName) : null;
+    snippet.sortLastName = snippet.lastName ? self._apos.sortify(snippet.lastName) : null;
     return async.series({
       uniqueEmail: function(callback) {
         if (!snippet.email) {
