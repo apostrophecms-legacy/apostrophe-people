@@ -748,9 +748,8 @@ people.People = function(options, callback) {
     }
 
     if ((!options.sort) && (!options.search) && (!options.q)) {
-      options.sort = { lastName: 1, firstName: 1 };
+      options.sort = { sortLastName: 1, sortFirstName: 1 };
     }
-
     var criteria = {
       $and: [
         userCriteria,
@@ -833,6 +832,8 @@ people.People = function(options, callback) {
     if ((!snippet.title) && (snippet.firstName || snippet.lastName)) {
       snippet.title = snippet.firstName + ' ' + snippet.lastName;
     }
+    snippet.sortFirstName = snippet.firstName ? self._apos.sortify(snippet.firstName) : null;
+    snippet.sortLastName = snippet.lastName ? self._apos.sortify(snippet.lastName) : null;
     return async.series({
       uniqueEmail: function(callback) {
         if (!snippet.email) {
