@@ -548,8 +548,13 @@ people.People = function(options, callback) {
         if (req.user) {
           return res.send({ 'status': 'loggedin' });
         }
-        var schemaSubset = _.filter(self.schema, function(field) {
-          return _.contains(options.applyFields, field.name);
+        var schemaSubset = [];
+        _.each(self.schema, function(field) {
+          if (_.contains(options.applyFields, field.name)) {
+            var _field = _.cloneDeep(field);
+            delete _field.group;
+            schemaSubset.push(_field);
+          }
         });
         // These fields might not be required for an admin editing a person but
         // for an applicant they are mandatory
