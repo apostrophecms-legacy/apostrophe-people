@@ -62,7 +62,8 @@ function AposPeople(optionsArg) {
     // Suggest full name if none yet or it doesn't have both first and last yet
     function updateName() {
       var $name = $el.findByName('title');
-      if ($name.val().indexOf(' ') === -1) {
+
+      if ($name.val() && $name.val().indexOf(' ') === -1) {
         $name.val(($firstName.val() + ' ' + $lastName.val()).replace(/ +$/, ''));
       }
       return true;
@@ -226,7 +227,7 @@ function AposPasswordEditor(options) {
     }
 
     $.jsonCall(
-      self._action + '/change-password',  
+      self._action + '/change-password',
       {
         oldPassword: oldPassword,
         newPassword: newPassword
