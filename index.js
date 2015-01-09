@@ -620,7 +620,7 @@ people.People = function(options, callback) {
               }
               // For bc we still have support for an applySubject option separate
               // from .email.applyEmailSubject
-              return self.email(req, res, user, self.options.applySubject || __('Your request to create an account on {{ host }}'), 'applyEmail', { url: self._action + '/confirm/' + user.applyConfirm }, function(err) {
+              return self.email(req, user, self.options.applySubject || res.__('Your request to create an account on {{ host }}'), 'applyEmail', { url: self._action + '/confirm/' + user.applyConfirm }, function(err) {
                 if (err) {
                   // Remove the person we just inserted if we have no way
                   // of communicating their confirmation link to them
