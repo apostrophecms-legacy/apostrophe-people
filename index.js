@@ -982,7 +982,7 @@ people.People = function(options, callback) {
       superPushAllAssets();
       if (options.apply) {
         // Construct our browser side object
-        var browserOptions = options.browser || {};
+        var browserOptions = options.apply.browser || {};
 
         // The option can't be .constructor because that has a special meaning
         // in a javascript object (not the one you'd expect, either) http://stackoverflow.com/questions/4012998/what-it-the-significance-of-the-javascript-constructor-property
