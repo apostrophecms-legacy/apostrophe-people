@@ -692,6 +692,62 @@ people.People = function(options, callback) {
         });
       });
     }
+
+    // This is a route that returns a thumbnail for a given user.
+    // The query can either contain a 'username' or an 'id' which
+    // will be used to fetch the appropriate user. Optionally, if
+    // you're using another name for the 'thumbnail' field on your
+    // person snippet, you can pass in 'fieldname' as part of the query
+    // and it will find the appropriate field.
+
+    self._app.get(self._action + '/thumbnail', function(req, res) {
+      var thumbnailUrl;
+      var id;
+      var username;
+      var fieldname;
+
+      return async.series({
+        validate: function(callback) {
+          // We want to be able to use either username or id.
+          // So check for numberness to determine which it is.
+          if (req.query.username){
+            username = self._apos.sanitizeString(req.query.username);
+          } else if (req.query.id){
+            id = self._apos.sanitizeString(req.query.id);
+          }
+
+          fieldname = (req.query.fieldname ? req.query.fieldname : 'thumbnail');
+
+          if (!id && !username) {
+            return callback('unconfirmed');
+          }
+          return callback(null);
+        },
+        getPerson: function(callback) {
+          var criteria = {};
+          if (!!id) {
+            criteria = { _id: id};
+          } else if (!!username){
+            criteria = { username: username};
+          }
+          return self.get(req, criteria, {}, function(err, results) {
+            if (err) {
+              return callback(err);
+            }
+            if (!results || results.total < 1) {
+              return callback('No people found.');
+            }
+
+            var person = results.snippets[0];
+
+            thumbnailUrl = self._apos._aposLocals.aposAreaImagePath(person, fieldname, {size: 'one-sixth'});
+            return callback(null);
+          });
+        },
+      }, function(err) {
+        return res.json(thumbnailUrl);
+      });
+    });
   }
 
   // Call the base class constructor. Don't pass the callback, we want to invoke it
@@ -1005,4 +1061,3 @@ people.People = function(options, callback) {
     process.nextTick(function() { return callback(null); });
   }
 };
-
