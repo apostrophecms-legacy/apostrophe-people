@@ -844,6 +844,7 @@ people.People = function(options, callback) {
         return self._apos.pages.findOne({
           type: self._instance,
           email: snippet.email,
+          trash: false,
           _id: { $ne: snippet._id }
         }, function(err, existing) {
           if (err) {
@@ -865,6 +866,7 @@ people.People = function(options, callback) {
         return self._apos.pages.findOne({
           type: self._instance,
           username: snippet.username,
+          trash: false,
           _id: { $ne: snippet._id }
         }, function(err, existing) {
           if (err) {
