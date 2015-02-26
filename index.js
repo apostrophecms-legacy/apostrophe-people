@@ -822,6 +822,49 @@ people.People = function(options, callback) {
     return callback(null);
   };
 
+  self.beforeTrash = function(req, snippet, trash, callback) {
+    if (trash) return callback(null);
+
+    async.series({
+      uniqueEmail: function(callback) {
+        self._apos.pages.findOne({
+          type: self._instance,
+          email: snippet.email,
+          trash: {$ne: true},
+          _id: { $ne: snippet._id }
+        }, function(err, existing) {
+          if (err) {
+            return callback(err);
+          }
+          if (existing) {
+            console.log("Email is duplicate, removing field");
+            return self._apos.pages.update({ slug: snippet.slug }, {$unset: {email: ""}}, callback);
+          }
+          return callback(null);
+        }); 
+      },
+      uniqueUsername: function(callback) {
+        self._apos.pages.findOne({
+          type: self._instance,
+          username: snippet.username,
+          trash: {$ne: true},
+          _id: { $ne: snippet._id }
+        }, function(err, existing) {
+          if (err) {
+            return callback(err);
+          }
+          if (existing) {
+            console.log("Username is duplicate, removing field");
+            return self._apos.pages.update({ slug: snippet.slug }, {$unset: {username: ""}}, callback);
+          }
+          return callback(null);
+        }); 
+      }
+    }, function(err) {
+      return callback(err);
+    });
+  }
+
   // Make sure the email address and username are unique. (This is not
   // proof against race conditions but these will be very rare and do not
   // affect existing users, just two newcomers signing up at the same
@@ -844,7 +887,7 @@ people.People = function(options, callback) {
         return self._apos.pages.findOne({
           type: self._instance,
           email: snippet.email,
-          trash: false,
+          trash: {$ne: true},
           _id: { $ne: snippet._id }
         }, function(err, existing) {
           if (err) {
@@ -866,7 +909,7 @@ people.People = function(options, callback) {
         return self._apos.pages.findOne({
           type: self._instance,
           username: snippet.username,
-          trash: false,
+          trash: {$ne: true},
           _id: { $ne: snippet._id }
         }, function(err, existing) {
           if (err) {
