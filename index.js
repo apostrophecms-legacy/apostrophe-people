@@ -1,11 +1,10 @@
+/* jshint node:true */
+
 var async = require('async');
 var _ = require('lodash');
 var extend = require('extend');
 var snippets = require('apostrophe-snippets');
-var util = require('util');
-var moment = require('moment');
 var pwgen = require('xkcd-pwgen');
-var nodemailer = require('nodemailer');
 var passwordHash = require('password-hash');
 
 // Creating an instance of the people module is easy:
@@ -202,7 +201,6 @@ people.People = function(options, callback) {
           if (!groupName) {
             return callback(null);
           }
-          var group;
           return self.getGroupsManager().ensureExists(req, groupName, [], function(err, _group) {
             if (err) {
               return callback(err);
@@ -483,9 +481,12 @@ people.People = function(options, callback) {
       if (!req.user) {
         return res.send({ 'status': 'notfound' });
       }
-      var schemaSubset = _.filter(self.schema, function(field) {
-        return _.contains(options.profileFields, field.name);
-      });
+      var schemaSubset = self._schemas.subset(self.schema, options.profileFields);
+      if (options.profileGroupFields) {
+        schemaSubset = self._schemas.refine(schemaSubset, {
+          groupFields: options.profileGroupFields
+        });
+      }
 
       // Get the entire user object. req.user does not contain joins for
       // performance reasons
@@ -500,9 +501,9 @@ people.People = function(options, callback) {
         // Never allow this to go over the wire, even hashed it's terrible to do that
         delete _snippet.password;
 
-        // Copy only what we deem appropriate to the object that goes
-        // over the wire
-        var snippet = _.pick(_snippet, _.pluck(schemaSubset, 'name'));
+        // Copy only what we deem appropriate to the object
+        // that goes over the wire
+        var snippet = self._schemas.subsetInstance(schemaSubset, _snippet);
         if (req.method === 'POST') {
           var set = {};
           var user;
@@ -547,8 +548,13 @@ people.People = function(options, callback) {
         if (req.user) {
           return res.send({ 'status': 'loggedin' });
         }
-        var schemaSubset = _.filter(self.schema, function(field) {
-          return _.contains(options.applyFields, field.name);
+        var schemaSubset = [];
+        _.each(self.schema, function(field) {
+          if (_.contains(options.applyFields, field.name)) {
+            var _field = _.cloneDeep(field);
+            delete _field.group;
+            schemaSubset.push(_field);
+          }
         });
         // These fields might not be required for an admin editing a person but
         // for an applicant they are mandatory
@@ -614,7 +620,7 @@ people.People = function(options, callback) {
               }
               // For bc we still have support for an applySubject option separate
               // from .email.applyEmailSubject
-              return self.email(req, res, user, self.options.applySubject || __('Your request to create an account on {{ host }}'), 'applyEmail', { url: self._action + '/confirm/' + user.applyConfirm }, function(err) {
+              return self.email(req, user, self.options.applySubject || res.__('Your request to create an account on {{ host }}'), 'applyEmail', { url: self._action + '/confirm/' + user.applyConfirm }, function(err) {
                 if (err) {
                   // Remove the person we just inserted if we have no way
                   // of communicating their confirmation link to them
@@ -686,6 +692,62 @@ people.People = function(options, callback) {
         });
       });
     }
+
+    // This is a route that returns a thumbnail for a given user.
+    // The query can either contain a 'username' or an 'id' which
+    // will be used to fetch the appropriate user. Optionally, if
+    // you're using another name for the 'thumbnail' field on your
+    // person snippet, you can pass in 'fieldname' as part of the query
+    // and it will find the appropriate field.
+
+    self._app.get(self._action + '/thumbnail', function(req, res) {
+      var thumbnailUrl;
+      var id;
+      var username;
+      var fieldname;
+
+      return async.series({
+        validate: function(callback) {
+          // We want to be able to use either username or id.
+          // So check for numberness to determine which it is.
+          if (req.query.username){
+            username = self._apos.sanitizeString(req.query.username);
+          } else if (req.query.id){
+            id = self._apos.sanitizeString(req.query.id);
+          }
+
+          fieldname = (req.query.fieldname ? req.query.fieldname : 'thumbnail');
+
+          if (!id && !username) {
+            return callback('unconfirmed');
+          }
+          return callback(null);
+        },
+        getPerson: function(callback) {
+          var criteria = {};
+          if (!!id) {
+            criteria = { _id: id};
+          } else if (!!username){
+            criteria = { username: username};
+          }
+          return self.get(req, criteria, {}, function(err, results) {
+            if (err) {
+              return callback(err);
+            }
+            if (!results || results.total < 1) {
+              return callback('No people found.');
+            }
+
+            var person = results.snippets[0];
+
+            thumbnailUrl = self._apos._aposLocals.aposAreaImagePath(person, fieldname, {size: 'one-sixth'});
+            return callback(null);
+          });
+        },
+      }, function(err) {
+        return res.json(thumbnailUrl);
+      });
+    });
   }
 
   // Call the base class constructor. Don't pass the callback, we want to invoke it
@@ -747,9 +809,8 @@ people.People = function(options, callback) {
     }
 
     if ((!options.sort) && (!options.search) && (!options.q)) {
-      options.sort = { lastName: 1, firstName: 1 };
+      options.sort = { sortLastName: 1, sortFirstName: 1 };
     }
-
     var criteria = {
       $and: [
         userCriteria,
@@ -780,8 +841,12 @@ people.People = function(options, callback) {
       });
       if (getGroups) {
         // Avoid infinite recursion by passing getPeople: false
-        // Let the groups permalink to their own best directory pages
-        return self._apos.joinByArray(req, results.snippets, 'groupIds', undefined, '_groups', { get: self.getGroupsManager().get, getOptions: { getPeople: false, permalink: true } }, function(err) {
+        // Let the groups permalink to their own best directory pages.
+        // Apply the "if only one" rule to joins defined on groups
+        // themselves. This way the "show" page for a person can
+        // see items joined to its groups, but they do not slow
+        // down index views.
+        return self._apos.joinByArray(req, results.snippets, 'groupIds', undefined, '_groups', { get: self.getGroupsManager().get, getOptions: { getPeople: false, withJoins: (results.snippets.length > 1) ? false : undefined, permalink: true } }, function(err) {
           if (err) {
             return callback(err);
           }
@@ -801,13 +866,7 @@ people.People = function(options, callback) {
     return callback(null);
   };
 
-  function appendExtraFields(data, snippet, callback) {
-    return callback(null);
-  }
-
   self.beforeSave = function(req, data, snippet, callback) {
-    var oldUsername = snippet.username;
-    var oldEmail = snippet.email;
 
     // Leading _ is a mnemonic reminding me to NOT store plaintext passwords directly!
     var _password = self._apos.sanitizeString(data.password, null);
@@ -877,6 +936,8 @@ people.People = function(options, callback) {
     if ((!snippet.title) && (snippet.firstName || snippet.lastName)) {
       snippet.title = snippet.firstName + ' ' + snippet.lastName;
     }
+    snippet.sortFirstName = snippet.firstName ? self._apos.sortify(snippet.firstName) : null;
+    snippet.sortLastName = snippet.lastName ? self._apos.sortify(snippet.lastName) : null;
     return async.series({
       uniqueEmail: function(callback) {
         if (!snippet.email) {
@@ -916,7 +977,7 @@ people.People = function(options, callback) {
             return callback(err);
           }
           if (existing) {
-            return callback('duplicateUsername');
+            return callback({ message: 'Duplicate Username' });
           }
           return callback(null);
         });
@@ -1022,7 +1083,7 @@ people.People = function(options, callback) {
       superPushAllAssets();
       if (options.apply) {
         // Construct our browser side object
-        var browserOptions = options.browser || {};
+        var browserOptions = options.apply.browser || {};
 
         // The option can't be .constructor because that has a special meaning
         // in a javascript object (not the one you'd expect, either) http://stackoverflow.com/questions/4012998/what-it-the-significance-of-the-javascript-constructor-property
@@ -1045,4 +1106,3 @@ people.People = function(options, callback) {
     process.nextTick(function() { return callback(null); });
   }
 };
-
