@@ -33,59 +33,98 @@ function AposPeopleApply(options) {
     // Make sure we have access to the functionality of apostrophe-schemas,
     // user.js in the apostrophe module, etc.
     apos.requireScene('user', function() {
-      var url = self._action + '/apply';
-      $.getJSON(url, function(data) {
+      self.url = self._action + '/apply';
+      $.getJSON(self.url, function(data) {
         if (data.status !== 'ok') {
           alert('A server error occurred.');
           return;
         }
-        var piece = data.piece;
-        var fields = data.fields;
-        var $piece = $(data.template);
-        apos.modal($piece, {
-          init: function(callback) {
-            return aposSchemas.populateFields($piece, fields, piece, function() {
-              // Leverage the same enhancements that the people module uses
-              // when admins edit people
-              var people = aposPages.getType('people');
-              people.suggestName($piece, piece);
-              people.suggestUsername($piece, piece);
-              people.suggestPassword($piece, piece);
-              return callback();
-            });
-          },
-          save: function(callback) {
-            return aposSchemas.convertFields($piece, fields, piece, function(err) {
-              if (err) {
-                return callback(err);
-              }
-              $.jsonCall(url, piece, function(result) {
-                if (result.status === 'duplicateEmail') {
-                  alert('That email address is already in use. If you have lost access to your account try resetting your password.');
-                  return callback('error');
-                }
-                if (result.status === 'duplicateUsername') {
-                  alert('That username is already in use. Try another.');
-                  return callback('error');
-                }
-                if (result.status !== 'ok') {
-                  alert('An error occurred. Please try again.');
-                  return callback('error');
-                }
-                if (result.confirmed) {
-                  alert('Your account is ready to use!');
-                  apos.data.user = result.user;
-                  apos.afterLogin();
-                  return callback(null);
-                } else {
-                  alert('To protect your privacy, you will receive confirmation of your new account by email. You must click on the link in that email to confirm your account.');
-                  return callback(null);
-                }
-              });
-            });
-          }
+        self.piece = data.piece;
+        self.fields = data.fields;
+        self.$piece = $(data.template);
+        // otherwise selectize politely refuses to work
+        self.$piece.removeClass('apos-template');
+        apos.modal(self.$piece, {
+          init: self.init,
+          save: self.save
         });
       });
     });
   };
+
+  self.init = function(callback) {
+    return async.series([
+      self.beforePopulateFields,
+      self.populateFields,
+      self.afterPopulateFields
+    ], callback);
+  };
+
+  self.beforePopulateFields = function(callback) {
+    return apos.afterYield(callback);
+  };
+
+  self.populateFields = function(callback) {
+    return aposSchemas.populateFields(self.$piece, self.fields, self.piece, function() {
+      // Leverage the same enhancements that the people module uses
+      // when admins edit people
+      var people = aposPages.getType('people');
+      people.suggestName(self.$piece, self.piece);
+      people.suggestUsername(self.$piece, self.piece);
+      people.suggestPassword(self.$piece, self.piece);
+      return callback();
+    });
+  };
+
+  self.afterPopulateFields = function(callback) {
+    return apos.afterYield(callback);
+  };
+
+  self.save = function(callback) {
+    return async.series([
+      self.beforeConvertFields,
+      self.convertFields,
+      self.afterConvertFields
+    ], function(err) {
+      if (err) {
+        return callback(err);
+      }
+      $.jsonCall(self.url, self.piece, function(result) {
+        if (result.status === 'duplicateEmail') {
+          alert('That email address is already in use. If you have lost access to your account try resetting your password.');
+          return callback('error');
+        }
+        if (result.status === 'duplicateUsername') {
+          alert('That username is already in use. Try another.');
+          return callback('error');
+        }
+        if (result.status !== 'ok') {
+          alert('An error occurred. Please try again.');
+          return callback('error');
+        }
+        if (result.confirmed) {
+          alert('Your account is ready to use!');
+          apos.data.user = result.user;
+          apos.afterLogin();
+          return callback(null);
+        } else {
+          alert('To protect your privacy, you will receive confirmation of your new account by email. You must click on the link in that email to confirm your account.');
+          return callback(null);
+        }
+      });
+    });
+  };
+
+  self.beforeConvertFields = function(callback) {
+    return apos.afterYield(callback);
+  };
+
+  self.convertFields = function(callback) {
+    return aposSchemas.convertFields(self.$piece, self.fields, self.piece, callback);
+  };
+
+  self.afterConvertFields = function(callback) {
+    return apos.afterYield(callback);
+  };
+
 }
