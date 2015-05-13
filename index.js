@@ -707,6 +707,15 @@ people.People = function(options, callback) {
             }
             return callback(null);
           },
+          get: function(callback) {
+            return self._apos.pages.findOne({ applyConfirm: confirm }, function(err, _person) {
+              if (err) {
+                return callback(err);
+              }
+              person = _person;
+              return callback(null);
+            });
+          },
           confirm: function(callback) {
             return self._apos.pages.update({ type: 'person', applyConfirm: confirm, login: { $ne: true } }, { $set: { login: true }, $unset: { applyConfirm: 1 } }, function(err, count) {
               if (err) {
@@ -718,6 +727,10 @@ people.People = function(options, callback) {
               return callback(null);
             });
           },
+          emit: function(callback) {
+            self._apos.emit('signupConfirmed', person);
+            return setImmediate(callback);
+          }
         }, function(err) {
           return res.send(self.renderPage(req, err ? err : 'confirmed', { message: err, reset: reset }));
         });

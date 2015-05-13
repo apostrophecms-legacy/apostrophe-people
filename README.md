@@ -221,3 +221,17 @@ peopleExtras: false
 You can also specify an array of extra fields, replacing the usual job title field. The syntax is a subset of that supported by Apostrophe schemas. We recommend sticking to simple `string` and `select` field types here.
 
 **The relationship between people and groups is currently not an A2 join in the usual sense.** We're not crazy about that, and we may migrate to using standard A2 joins and relationships in the future.
+
+### Taking action when a new account is confirmed or created
+
+You may wish to take special action when a user has confirmed their account, or if you are not using the `applyConfirm` feature, when their account is first created.
+
+You can do so by listening for the `signupConfirmed` event:
+
+```javascript
+apos.on('signupConfirmed', function(person) {
+  // do as you see fit with this person
+});
+```
+
+For instance you might use this feature to implement an additional level of confirmation by the administrator before manually adding the user to a privileged group.
