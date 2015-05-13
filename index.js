@@ -944,7 +944,7 @@ people.People = function(options, callback) {
             return self._apos.pages.update({ slug: snippet.slug }, {$unset: {email: ""}}, callback);
           }
           return callback(null);
-        }); 
+        });
       },
       uniqueUsername: function(callback) {
         self._apos.pages.findOne({

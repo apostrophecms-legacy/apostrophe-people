@@ -194,7 +194,6 @@ function AposPasswordEditor(options) {
   };
 
   self.init = function(callback) {
-    console.log(self.$el[0]);
     return callback(null);
   }
 
