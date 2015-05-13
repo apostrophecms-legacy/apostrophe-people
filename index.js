@@ -660,8 +660,39 @@ people.People = function(options, callback) {
             res.send({ status: status });
           });
         } else {
+
           var piece = self.newInstance();
-          return res.send({ status: 'ok', fields: schemaSubset, piece: piece, template: self.render('apply', { fields: schemaSubset }, req) });
+
+          // Make the global page available in the
+          // apply form. This facilitates including
+          // editable content (edited elsewhere).
+          //
+          // Note that it may be undefined if it hasn't
+          // been populated yet.
+
+          return self._apos.getPage(req, 'global', { permissions: false }, function(err, global) {
+            if (err) {
+              return res.send({ status: 'error' });
+            }
+
+            if (!global) {
+              // don't crash if there is no global content yet
+              global = { slug: 'global' };
+            }
+
+            return res.send({
+              status: 'ok',
+              fields: schemaSubset,
+              piece: piece,
+              template: self.render(
+                'apply', {
+                  fields: schemaSubset,
+                  global: global
+                },
+                req
+              )
+            });
+          });
         }
       });
 

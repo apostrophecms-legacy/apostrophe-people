@@ -127,4 +127,5 @@ function AposPeopleApply(options) {
     return apos.afterYield(callback);
   };
 
+  return self;
 }
