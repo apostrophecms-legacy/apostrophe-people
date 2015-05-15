@@ -62,9 +62,11 @@ function AposPeople(optionsArg) {
     // Suggest full name if none yet or it doesn't have both first and last yet
     function updateName() {
       var $name = $el.findByName('title');
-
-      if ($name.val() && $name.val().indexOf(' ') === -1) {
-        $name.val(($firstName.val() + ' ' + $lastName.val()).replace(/ +$/, ''));
+      var firstName = $firstName.val();
+      var lastName = $lastName.val();
+      if (firstName.length && lastName.length && (!$name.val().length)) {
+        var suggestion = (firstName + ' ' + lastName);
+        $name.val(suggestion);
       }
       return true;
     }
