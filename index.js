@@ -783,8 +783,9 @@ people.People = function(options, callback) {
             }
 
             var person = results.snippets[0];
-
-            thumbnailUrl = self._apos._aposLocals.aposAreaImagePath(person, fieldname, {size: 'one-sixth'});
+            if(!self._apos._aposLocals.aposSingletonIsEmpty(person, fieldname, 'slideshow')){
+              thumbnailUrl = self._apos._aposLocals.aposAreaImagePath(person, fieldname, {size: 'one-sixth'});
+            }
             return callback(null);
           });
         },
@@ -961,7 +962,7 @@ people.People = function(options, callback) {
             return self._apos.pages.update({ slug: snippet.slug }, {$unset: {username: ""}}, callback);
           }
           return callback(null);
-        }); 
+        });
       }
     }, function(err) {
       return callback(err);
