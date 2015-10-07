@@ -1093,7 +1093,7 @@ people.People = function(options, callback) {
         group = snippet._groups[0];
         return callback(null);
       }
-      return self.getGroupsManager().getOne(req, { _id: { $in: snippet._groupIds || [] } }, {}, function(err, groupArg) {
+      return self.getGroupsManager().getOne(req, { _id: { $in: snippet.groupIds || [] } }, {}, function(err, groupArg) {
         if (err) {
           return callback(err);
         }
