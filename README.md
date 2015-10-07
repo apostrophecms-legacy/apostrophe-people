@@ -235,3 +235,7 @@ apos.on('signupConfirmed', function(person) {
 ```
 
 For instance you might use this feature to implement an additional level of confirmation by the administrator before manually adding the user to a privileged group.
+
+### An Alternative to the "Directory" Pages
+
+If you are never interested in displaying a directory that nests people hierarchically within groups, and simply wish to display a directory of all of the people on the site, optionally filtered by tag, consider using the `simplePages: true` option. When this flag is in effect, a page of type `people` behaves just like any snippet index page.

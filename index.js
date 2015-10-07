@@ -1053,7 +1053,18 @@ people.People = function(options, callback) {
   // maintain a guaranteed pecking order right now. Possibly we
   // should guarantee that a user's groups can be ordered
 
+  // As it turns out we pretty much hate this whole thing, so provide
+  // a simplePages option to use the standard "best page" algorithm,
+  // which will find pages of type people. -Tom
+
+  var superFindBestPage = self.findBestPage;
+
   self.findBestPage = function(req, snippet, callback) {
+
+    if (self.options.simplePages) {
+      return superFindBestPage(req, snippet, callback);
+    }
+
     if (!req.aposBestPageByGroupId) {
       req.aposBestPageByGroupId = {};
     }
