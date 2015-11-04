@@ -1116,7 +1116,6 @@ people.People = function(options, callback) {
 
   var superDispatch = self.dispatch;
   self.dispatch = function(req, callback) {
-    console.log('DEPRECATED: the people module should no longer be used to create staff directory pages. Instead use the groups module which is designed to serve up directories using data from both people and groups.');
     return superDispatch.call(this, req, callback);
   };
 
