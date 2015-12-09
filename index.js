@@ -384,6 +384,7 @@ people.People = function(options, callback) {
               return callback(err);
             }
             if (!page) {
+              self._apos.emit('peopleResetRequestInvalidLogin', { username: login });
               return callback(__('No user with that username or email address was found, or there is no email address associated with your account. Please try again or contact your administrator.'));
             }
             person = page;
@@ -412,6 +413,7 @@ people.People = function(options, callback) {
               return callback(err);
             }
             done = true;
+            self._apos.emit('peopleResetRequest', { username: login });
             return callback(null);
           });
         }
@@ -450,6 +452,7 @@ people.People = function(options, callback) {
             }
             if (!page) {
               template = 'resetFail';
+              self._apos.emit('peopleResetInvalidCode', {});
               return callback(null);
             }
             person = page;
@@ -468,6 +471,7 @@ people.People = function(options, callback) {
               template = 'resetFail';
               return callback(null);
             }
+            self._apos.emit('peopleReset', person);
             template = 'resetDone';
             return callback(null);
           });
