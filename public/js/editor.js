@@ -159,7 +159,12 @@ function AposPeople(optionsArg) {
             return self.populateSomeFields($profile, fields, profile, callback);
           },
           save: function(callback) {
-            return self.convertSomeFields($profile, fields, profile, function() {
+            return self.convertSomeFields($profile, fields, profile, function(err) {
+              if (err) {
+                // Balk on "required" or similar error
+                aposSchemas.scrollToError($profile);
+                return callback(err);
+              }
               $.jsonCall(self._action + '/profile', profile, function(result) {
                 if (result.status !== 'ok') {
                   alert('An error occurred. Please try again.');
