@@ -153,6 +153,7 @@ function AposPeople(optionsArg) {
         var profile = data.profile;
         var fields = data.fields;
         var $profile = $(data.template);
+        $profile.removeClass('apos-template');
         apos.modal($profile, {
           init: function(callback) {
             return self.populateSomeFields($profile, fields, profile, callback);
