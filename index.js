@@ -378,7 +378,7 @@ people.People = function(options, callback) {
             type: 'person',
             login: true,
             email: { $ne: '' },
-            $or: [ { username: login }, { email: login } ]
+            $or: [ { username: login }, { email: self._apos.emailMatch(login) } ]
           }, function(err, page) {
             if (err) {
               return callback(err);
@@ -597,7 +597,7 @@ people.People = function(options, callback) {
               }
               // If they applied before and have never confirmed, let them
               // try again, don't lock out their email address forever
-              return self.getOne(req, { email: user.email, applyConfirm: { $exists: true }, login: { $ne: true } }, { permissions: false }, function(err, existing) {
+              return self.getOne(req, { email: self._apos.emailMatch(user.email), applyConfirm: { $exists: true }, login: { $ne: true } }, { permissions: false }, function(err, existing) {
                 if (err) {
                   return callback(err);
                 }
@@ -937,7 +937,7 @@ people.People = function(options, callback) {
       uniqueEmail: function(callback) {
         self._apos.pages.findOne({
           type: self._instance,
-          email: snippet.email,
+          email: self._apos.emailMatch(snippet.email),
           trash: {$ne: true},
           _id: { $ne: snippet._id }
         }, function(err, existing) {
@@ -996,7 +996,7 @@ people.People = function(options, callback) {
         }
         return self._apos.pages.findOne({
           type: self._instance,
-          email: snippet.email,
+          email: self._apos.emailMatch(snippet.email),
           trash: {$ne: true},
           _id: { $ne: snippet._id }
         }, function(err, existing) {
