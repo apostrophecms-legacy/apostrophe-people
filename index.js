@@ -734,8 +734,26 @@ people.People = function(options, callback) {
           emit: function(callback) {
             self._apos.emit('signupConfirmed', person);
             return setImmediate(callback);
+          },
+          loginOnConfirm: function(callback) {
+            if (self.options.loginOnConfirm) {
+              person.login = true;
+              return async.series({
+                // Apply the same logic we would apply to a normal login
+                beforeSignin: function(callback) {
+                  return self._apos.appyBeforeSignin(person, callback);
+                },
+                login: function(callback) {
+                  return req.login(person, callback);
+                }
+              }, callback);
+            }
+            return setImmediate(callback);
           }
         }, function(err) {
+          if (err) {
+            console.error(err);
+          }
           return res.send(self.renderPage(req, err ? err : 'confirmed', { message: err, reset: reset }));
         });
       });
