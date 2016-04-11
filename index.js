@@ -911,7 +911,7 @@ people.People = function(options, callback) {
   // module
 
   self.permalink = function(req, snippet, page, callback) {
-    snippet.url = page.slug + '/' + snippet.slug;
+    snippet.url = self._apos.slugToUrl(page.slug + '/' + snippet.slug);
     return callback(null);
   };
 
