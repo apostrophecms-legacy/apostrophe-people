@@ -1115,7 +1115,7 @@ people.People = function(options, callback) {
         group = snippet._groups[0];
         return callback(null);
       }
-      return self.getGroupsManager().getOne(req, { _id: { $in: snippet.groupIds || [] } }, {}, function(err, groupArg) {
+      return self.getGroupsManager().getOne(req, { _id: { $in: snippet.groupIds || [] } }, self.getOptionsForGetFirstGroup(), function(err, groupArg) {
         if (err) {
           return callback(err);
         }
@@ -1134,6 +1134,18 @@ people.People = function(options, callback) {
         return callback(err);
       });
     }
+  };
+
+  // When fetching a person's first group in order to figure out the best index page,
+  // the default behavior is now to fetch it without recursively joining back to
+  // people or carrying out any other joins, in order to prevent an infinite recursion.
+  // However you can tweak this behavior by overriding this method
+
+  self.getOptionsForGetFirstGroup = function() {
+    return {
+      withJoins: false,
+      getPeople: false
+    };
   };
 
   var superDispatch = self.dispatch;
