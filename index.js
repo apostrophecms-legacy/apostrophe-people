@@ -901,6 +901,11 @@ people.People = function(options, callback) {
       if (err) {
         return callback(err);
       }
+      if (!results.snippets) {
+        // The rest of this method is concerned with overriding what happens
+        // in the normal case, not distinct tags or similar
+        return callback(null, results);
+      }
       _.each(results.snippets, function(snippet) {
         // Read access to the password is strictly via Appy's local strategy, anything else
         // must consider it write-only
