@@ -935,7 +935,7 @@ people.People = function(options, callback) {
 
   self.permalink = function(req, snippet, page, callback) {
     snippet.url = self._apos.slugToUrl(page.slug + '/' + snippet.slug);
-    return callback(null);
+    return setImmediate(callback);
   };
 
   self.beforeSave = function(req, data, snippet, callback) {
@@ -1106,7 +1106,7 @@ people.People = function(options, callback) {
     var page;
     // Cache for performance
     if (req.aposBestPageByGroupId[groupId]) {
-      return callback(null, req.aposBestPageByGroupId[groupId]);
+      return setImmediate(_.partial(callback, null, req.aposBestPageByGroupId[groupId]));
     }
     async.series([ getFirstGroup, findBest ], function(err) {
       if (err) {
